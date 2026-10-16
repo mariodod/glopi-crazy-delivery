@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 
 import BootScene from './scenes/BootScene.js';
 import PreloadScene from './scenes/PreloadScene.js';
@@ -29,4 +29,8 @@ const config = {
   scene: [BootScene, PreloadScene, MenuScene, GameScene],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Debug hook: reach the scene manager from devtools / test probes.
+// Way more useful than console.log spaghetti for tuning M2's bike feel.
+window.__game = game;

@@ -1,4 +1,4 @@
-import Phaser from 'phaser';
+import * as Phaser from 'phaser';
 
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, WORLD, PLAYER } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
@@ -87,12 +87,18 @@ export default class GameScene extends Phaser.Scene {
 
     const body = this.glopi.body;
 
-    // Smooth arcade feel: chase the target velocity instead of snapping.
+    // Smooth arcade feel: chase the target velocity instead of snapping,
+    // then rotate the sprite toward the direction of travel with a capped
+    // step so the heading "leans in" instead of snapping instantly.
     body.velocity.x += (input.x - body.velocity.x) * PLAYER.accel;
     body.velocity.y += (input.y - body.velocity.y) * PLAYER.accel;
 
     if (body.speed > 15) {
-      this.glopi.rotation = body.velocity.angle();
+      this.glopi.rotation = Phaser.Math.Angle.RotateTo(
+        this.glopi.rotation,
+        body.velocity.angle(),
+        PLAYER.turnRate
+      );
     }
   }
 }
