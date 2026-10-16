@@ -85,12 +85,12 @@ glopi-crazy-delivery/
 
 ## 6. Milestones
 
-### M0 — Setup & Walking Skeleton ✅ start
-- [x] Git repo init, `.gitignore`, README, PLAN.md
-- [ ] `index.html` + Phaser from CDN
-- [ ] Boot/Preload/Menu scenes, title screen "GLOPI'S CRAZY DELIVERY"
-- [ ] Placeholder pineapple spritesheet, keyboard movement on an empty map
-- **Exit criteria**: I can move Glopi around a blank canvas from the menu.
+### M0 — Setup & Walking Skeleton ✅ done
+- [x] Git repo init, `.gitignore`, README, PLAN.md, remote linked to GitHub
+- [x] `index.html` + Phaser 3.90 ESM via CDN (import map — no build step)
+- [x] Boot/Preload/Menu scenes, title screen "GLOPI'S CRAZY DELIVERY"
+- [x] Placeholder pineapple texture generated at runtime, WASD/arrow movement with camera follow and world bounds
+- **Exit criteria**: I can move Glopi around a blank canvas from the menu. ✔
 
 ### M1 — City that Feels like Barcelona (art pass)
 - [ ] Tiled installed, first city block tileset (road, sidewalk, crosswalk, buildings, plaza, beach)
@@ -139,7 +139,7 @@ glopi-crazy-delivery/
 
 **Risks**
 - Tilemap/collision tuning eats time → lock the map size early, iterate art, not layout.
-- Bike drift may feel mushy;iate tune with a debug overlay showing velocity vectors.
+- Bike drift may feel mushy → tune with a debug overlay showing velocity vectors.
 - Scope creep (3D, real Barcelona OSM import) — banned for v1.
 
 **Anti-goals (v1)**

@@ -22,8 +22,8 @@ export const COLORS = {
 
 export const PLAYER = {
   textureKey: 'glopi',
-  maxSpeed: 260, // px/s
-  accel: 0.16, // fraction of the velocity gap closed per frame @60fps (frame-rate dependent for now; real accel+drag tuning in M2)
+  maxSpeed: 280, // px/s
+  accel: 0.18, // fraction of the velocity gap closed per frame @60fps (frame-rate dependent for now; real accel+drag tuning in M2)
   turnRate: 0.35, // max radians of rotation per frame toward velocity direction
   bodyRadius: 14, // arcade physics circle radius (texture is 32x32)
 };
