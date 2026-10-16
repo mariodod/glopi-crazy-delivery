@@ -19,10 +19,12 @@ export const T = {
   FOUNTAIN: 20, PALM: 21, TREE: 22, LAMP: 23, BENCH: 24,
 };
 
-/** Tiles that stop the bike (set as `collides` property in the map JSON). */
+/** Tiles that stop the bike (set as `collides` property in the map JSON).
+ *  Water too — Glopi doesn't swim. Lamps & benches are knobs to knock over later (M4), not walls. */
 export const COLLIDES = new Set([
   T.BUILDING_A, T.BUILDING_B, T.BUILDING_C, T.BUILDING_D,
   T.FOUNTAIN, T.PALM, T.TREE,
+  T.WATER0, T.WATER1,
 ]);
 
 export const TILESET_NAME = 'city';
