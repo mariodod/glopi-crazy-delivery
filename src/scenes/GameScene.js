@@ -39,8 +39,10 @@ export default class GameScene extends Phaser.Scene {
       'W,A,S,D,UP,LEFT,DOWN,RIGHT'
     );
 
+    this.input.keyboard.once('keydown-ESC', () => this.scene.start('Menu'));
+
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M0 ·  Pedalear con WASD o las flechas', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M0 ·  WASD / flechas para pedalear · ESC = menú', {
         fontFamily: 'monospace',
         fontSize: '18px',
         color: '#ffffff',

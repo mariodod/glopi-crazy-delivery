@@ -56,8 +56,4 @@ export function createPlaceholderTextures(scene) {
   drawGlopi(g);
   g.generateTexture('glopi', 32, 32);
   g.destroy();
-
-  // PreloadScene takes over this duty in M0.2; left here so GameScene
-  // stays runnable on its own until then.
-  void 0;
 }
