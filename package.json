@@ -1,0 +1,10 @@
+{
+  "name": "glopi-crazy-delivery",
+  "version": "0.1.0",
+  "description": "Glopi, a pineapple, delivers for Glovo in Barcelona on a bicycle — Crazy Taxi style, built with Phaser 3.",
+  "type": "module",
+  "scripts": {
+    "start": "npx --yes serve ."
+  },
+  "license": "MIT"
+}
