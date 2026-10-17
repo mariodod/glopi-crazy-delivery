@@ -112,7 +112,7 @@ export class OrderSystem {
     return this.current;
   }
 
-  /** SPACE at a restaurant while an order is offered. */
+  /** Full stop at a restaurant while an order is offered. */
   tryAccept(px, py) {
     const o = this.current;
     if (!o || o.state !== 'offered') return false;

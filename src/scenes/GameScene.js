@@ -98,8 +98,17 @@ export default class GameScene extends Phaser.Scene {
 
     // ---- Traffic + pedestrians (M4) --------------------------------------
     this.traffic = new TrafficSystem({ traffic: TRAFFIC, peds: PEDS });
+    this.dwellPickup = 0; // stationary time inside the pickup ring
+    this.dwellDrop = 0; // stationary time inside the customer ring
+    this.dwellVisual = null;
     this.traffic.on('bumped', (p) =>
       this.floatText(p.x, p.y - 20, '¡AY!', '#9aa4ad'));
+    // near-miss bonus: weave close past a car at speed and get paid for it
+    this.traffic.on('nearmiss', (p) => {
+      this.orders.earnings += p.amount;
+      this.floatText(p.x, p.y - 30, `¡CASI! +€${p.amount}`, '#ffd75e');
+      this.playSfx('sfx-coin');
+    });
 
     // landmark bases keep their collision (traffic milestone promised it):
     // invisible static rects where the sprites stand.
@@ -172,7 +181,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M3 · W acelera · S frena · A/D virar · ESPACIO acepta pedido · H debug · ESC = menú', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M4 · W acelera · S frena · A/D virar · frena en el círculo para recoger/entregar · MAYÚS campana · H debug · ESC = menú', {
         fontFamily: 'monospace',
         fontSize: '18px',
         color: '#ffffff',
@@ -299,6 +308,18 @@ export default class GameScene extends Phaser.Scene {
         .setText(`${o.customer.name} · ${Math.ceil(o.timeLeft)}s`)
         .setColor('#ff8aa4')
         .setPosition(o.customer.x, o.customer.y - 52);
+    }
+    // stop-progress: a white arc fills the ring while Glopi dwells inside
+    if (this.dwellVisual?.place) {
+      const { place, radius, ratio } = this.dwellVisual;
+      g.lineStyle(3.5, 0xffffff, 0.9);
+      g.beginPath();
+      g.arc(
+        place.x, place.y, radius,
+        -Math.PI / 2,
+        -Math.PI / 2 + Math.PI * 2 * ratio
+      );
+      g.strokePath();
     }
     this.drawBeacon(o.state === 'offered' ? o.restaurant : o.customer, nowMs);
   }
@@ -451,11 +472,13 @@ export default class GameScene extends Phaser.Scene {
     if (this.debugOn) this.drawDebug();
 
     // ---- traffic (M4) ----
-    this.traffic.update(dt, {
+    const trafficProbe = {
       x: this.glopi.x, y: this.glopi.y,
       vx: this.vel.x, vy: this.vel.y,
       speed: this.vel.length(),
-    });
+    };
+    this.traffic.update(dt, trafficProbe);
+    this.traffic.checkNearMisses(trafficProbe);
     this.traffic.cars.forEach((car, i) => {
       const sprite = this.carSpriteList[i];
       sprite.setPosition(car.x, car.y);
@@ -489,14 +512,46 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // ---- orders core loop (M3) ----
+    // ---- orders core loop (M3/M4) ----
     this.orders.update(dt);
-    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
+
+    // stop-to-act: coming fully to a halt inside a zone picks up (restaurant)
+    // or delivers (customer) — no buttons. Leaving the zone or braking off
+    // resets the dwell.
+    const stopSpd = this.vel.length();
+    this.dwellVisual = null;
+
+    this.dwellPickup = this.orders.inPickupRange(this.glopi.x, this.glopi.y) && stopSpd < ORDER.stopSpeed
+      ? this.dwellPickup + dt
+      : 0;
+    if (this.dwellPickup >= ORDER.stopTime) {
       this.orders.tryAccept(this.glopi.x, this.glopi.y);
+      this.dwellPickup = 0;
     }
-    if (this.orders.inDropRange(this.glopi.x, this.glopi.y)) {
+
+    this.dwellDrop = this.orders.inDropRange(this.glopi.x, this.glopi.y) && stopSpd < ORDER.stopSpeed
+      ? this.dwellDrop + dt
+      : 0;
+    if (this.dwellDrop >= ORDER.stopTime) {
       this.orders.tryDeliver(this.glopi.x, this.glopi.y);
+      this.dwellDrop = 0;
     }
+
+    // dwell feedback for drawOrderZones: the zone being filled and its ratio
+    if (this.dwellPickup > 0.02) {
+      this.dwellVisual = {
+        place: this.orders.order?.restaurant,
+        radius: ORDER.pickupRadius,
+        ratio: Math.min(1, this.dwellPickup / ORDER.stopTime),
+      };
+    } else if (this.dwellDrop > 0.02) {
+      this.dwellVisual = {
+        place: this.orders.order?.customer,
+        radius: ORDER.dropRadius,
+        ratio: Math.min(1, this.dwellDrop / ORDER.stopTime),
+      };
+    }
+
     this.drawOrderZones(timeMs);
   }
 }

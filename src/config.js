@@ -42,13 +42,17 @@ export const IMPACT = {
 export const DEBUG_KEY = 'H';
 
 /**
- * Orders core loop (M3). Zones are radius checks against Glopi's center.
- * All time units are seconds, fares in €. tipMax multiplies the base fare
- * at full remaining time — time tiers become a proper meter in M5.
+ * Orders core loop (M3/M4). Zones are radius checks against Glopi's center.
+ * Pickup AND delivery both happen automatically when Glopi comes fully to a
+ * stop inside the zone — no button. All time units are seconds, fares in €.
+ * tipMax multiplies the base fare at full remaining time — time tiers become
+ * a proper meter in M5.
  */
 export const ORDER = {
-  pickupRadius: 44, // px — drive into the restaurant ring, press SPACE
-  dropRadius: 44, // px — customer zone auto-completes
+  pickupRadius: 44, // px — restaurant ring
+  dropRadius: 44, // px — customer ring
+  stopSpeed: 22, // px/s — below this Glopi counts as "fully stopped"
+  stopTime: 0.65, // s stationary inside a zone before pickup/delivery fires
   fareBase: 6, // € regardless of distance
   farePerTile: 0.9, // € per tile (32px) of restaurant→customer distance
   timeBase: 10, // s of free time

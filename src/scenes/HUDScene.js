@@ -56,7 +56,7 @@ export default class HUDScene extends Phaser.Scene {
     }
 
     if (o.state === 'offered') {
-      this.tagText.setText('ACEPTAR · ESPACIO').setColor('#ffd75e');
+      this.tagText.setText('RECOGER · FRENA EN EL CÍRCULO').setColor('#ffd75e');
       this.nameText.setText(o.restaurant.name);
       this.subText.setText(o.restaurant.dish);
       this.fareText.setText(`€${o.fare} · ${Math.round(o.routePx / 32)}m`);
