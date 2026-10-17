@@ -2,9 +2,11 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
+  TRAFFIC, PEDS,
 } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
+import { TrafficSystem } from '../systems/TrafficSystem.js';
 import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
 /** Middle of La Rambla (cols 32-33), heading north. */
@@ -93,6 +95,42 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.scene.launch('HUD');
+
+    // ---- Traffic + pedestrians (M4) --------------------------------------
+    this.traffic = new TrafficSystem({ traffic: TRAFFIC, peds: PEDS });
+
+    // landmark bases keep their collision (traffic milestone promised it):
+    // invisible static rects where the sprites stand.
+    this.landmarkBodies = this.physics.add.staticGroup();
+    for (const obj of this.map.getObjectLayer('landmarks')?.objects ?? []) {
+      const zone = this.landmarkBodies.create(obj.x, obj.y - 12, PLAYER.textureKey);
+      zone.setVisible(false);
+      zone.body.setSize(96, 30, true); // StaticBody.setSize re-syncs from the transform
+    }
+    this.physics.add.collider(this.glopi, this.landmarkBodies, this.onWallHit, null, this);
+
+    // cars: tinted placeholders with immovable bodies; traffic system drives
+    // positions every frame, arcade only reacts on contact.
+    this.carSprites = this.physics.add.group();
+    this.traffic.cars.forEach((car, i) => {
+      const sprite = this.carSprites.create(car.x, car.y, car.type);
+      sprite.setDepth(22);
+      if (car.type === 'car') sprite.setTint(TRAFFIC.palette[car.tintIndex]);
+      const half = car.type === 'car' ? { w: 30, h: 14 } : { w: 13, h: 9 };
+      sprite.body.setSize(half.w, half.h, true);
+      sprite.body.setImmovable(true);
+    });
+    this.lastCarHit = -1;
+    this.physics.add.collider(this.glopi, this.carSprites, this.onCarHit, null, this);
+    this.carSpriteList = this.carSprites.getChildren().slice();
+
+    // pedestrians (no bodies — bumped/belled by radius checks in the system)
+    this.pedSprites = this.traffic.peds.map((ped) => {
+      const s = this.add.sprite(ped.x, ped.y, 'ped').setDepth(21);
+      s.pedRef = ped;
+      return s;
+    });
+    // ----------------------------------------------------------------------
 
     // pulsing zone rings + floating label
     this.orderGfx = this.add.graphics().setDepth(14);
@@ -294,6 +332,33 @@ export default class GameScene extends Phaser.Scene {
     );
   }
 
+  /** Car collision: bounce like a soft wall + coin penalty + sparks. */
+  onCarHit(_glopi, carSprite) {
+    const now = this.time.now;
+    if (now - this.lastCarHit < TRAFFIC.hitCooldown) return;
+    this.lastCarHit = now;
+
+    const blocked = this.glopi.body.blocked;
+    if (blocked.up) this.vel.y = Math.abs(this.vel.y) * 0.25;
+    if (blocked.down) this.vel.y = -Math.abs(this.vel.y) * 0.25;
+    if (blocked.left) this.vel.x = Math.abs(this.vel.x) * 0.25;
+    if (blocked.right) this.vel.x = -Math.abs(this.vel.x) * 0.25;
+    this.vel.scale(0.55); // "you really got hit" slowdown
+    if (this.vel.length() > 20) this.heading = this.vel.angle();
+
+    if (this.orders) {
+      const before = this.orders.earnings;
+      this.orders.earnings = Math.max(0, this.orders.earnings - TRAFFIC.hitPenalty);
+      const spent = Math.round(before - this.orders.earnings);
+      if (spent > 0) {
+        this.floatText(carSprite.x, carSprite.y - 34, `−€${spent} ¡AY!`, '#ff5e8b');
+      }
+    }
+
+    this.sparks.explode(6, this.glopi.x, this.glopi.y);
+    this.cameras.main.shake(90, 0.004);
+  }
+
   drawDebug() {
     const g = this.debugGfx;
     const bike = this.glopi;
@@ -382,6 +447,36 @@ export default class GameScene extends Phaser.Scene {
 
     this.debugVals = { forward, lateral };
     if (this.debugOn) this.drawDebug();
+
+    // ---- traffic (M4) ----
+    this.traffic.update(dt, {
+      x: this.glopi.x, y: this.glopi.y,
+      vx: this.vel.x, vy: this.vel.y,
+      speed: this.vel.length(),
+    });
+    this.traffic.cars.forEach((car, i) => {
+      const sprite = this.carSpriteList[i];
+      sprite.setPosition(car.x, car.y);
+      const vx = car.lane.axis === 'h' ? car.lane.dir * car.speed : 0;
+      const vy = car.lane.axis === 'v' ? car.lane.dir * car.speed : 0;
+      sprite.body.velocity.set(vx, vy);
+      sprite.rotation = Math.atan2(vy, vx);
+    });
+    // pedestrians (bump/bell via system; here just visuals)
+    {
+      const secs = timeMs / 1000;
+      for (const s of this.pedSprites) {
+        const ped = s.pedRef;
+        s.setPosition(ped.x, ped.y);
+        if (ped.stun > 0) {
+          s.rotation += 12 * dt;
+          s.setTint(0xff8aa4);
+        } else {
+          s.rotation = Math.sin(secs * 6 + ped.phase) * 0.1;
+          s.clearTint();
+        }
+      }
+    }
 
     // ---- orders core loop (M3) ----
     this.orders.update(dt);

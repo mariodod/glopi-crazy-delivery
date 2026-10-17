@@ -59,6 +59,15 @@ export function createPlaceholderTextures(scene) {
   drawSpark(g);
   g.generateTexture('spark', 4, 4);
 
+  drawCar(g);
+  g.generateTexture('car', 40, 22);
+
+  drawScooter(g);
+  g.generateTexture('scooter', 18, 12);
+
+  drawPed(g);
+  g.generateTexture('ped', 12, 16);
+
   g.destroy();
 }
 
@@ -68,4 +77,48 @@ function drawSpark(g) {
   g.fillCircle(2, 2, 2);
   g.fillStyle(0xffffff, 1);
   g.fillRect(1, 1, 2, 2);
+}
+
+/** Top-down car facing +x (0 = forward). White so sprites can tint it. */
+function drawCar(g) {
+  // wheels
+  g.fillStyle(0x222222, 1);
+  g.fillRect(7, 0, 7, 4);
+  g.fillRect(7, 18, 7, 4);
+  g.fillRect(27, 0, 7, 4);
+  g.fillRect(27, 18, 7, 4);
+  // body
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(2, 3, 37, 16);
+  // windshield + rear window
+  g.fillStyle(0x2b2b45, 1);
+  g.fillRect(24, 5, 5, 12);
+  g.fillRect(3, 5, 3, 12);
+  // headlights
+  g.fillStyle(0xffe08a, 1);
+  g.fillRect(38, 5, 2, 4);
+  g.fillRect(38, 13, 2, 4);
+}
+
+/** Top-down scooter facing +x. */
+function drawScooter(g) {
+  g.fillStyle(0x222222, 1);
+  g.fillRect(1, 3, 3, 6);   // rear wheel
+  g.fillRect(12, 3, 3, 6);  // front wheel
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(3, 1, 12, 10); // deck + rider base
+  g.fillStyle(0x333333, 1);
+  g.fillCircle(8, 6, 3);    // rider
+  g.fillStyle(0xffe08a, 1);
+  g.fillRect(16, 4, 2, 4);  // headlight
+}
+
+/** Tiny pedestrian (best watched while scattering). */
+function drawPed(g) {
+  g.fillStyle(0x2b2b45, 1);
+  g.fillRect(5, 11, 2, 5);  // legs
+  g.fillStyle(0xffd75e, 1); // shirt (pineapple-ish matching)
+  g.fillRect(4, 5, 4, 6);
+  g.fillStyle(0xe8b88a, 1); // head
+  g.fillCircle(6, 3, 3);
 }

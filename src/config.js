@@ -63,3 +63,35 @@ export const ZONE = {
   activeColor: 0xff5e8b, // pink = customer waiting for the delivery
   beaconColor: 0x66d9e8, // arrow above Glopi pointing at the target
 };
+
+/**
+ * Traffic (M4). Straight two-way lane cruise on the Eixample grid;
+ * the Rambla (col 32) and the Diagonal are pedestrian/off-grid.
+ * Right-hand rule: forward traffic uses the lower/later line.
+ */
+export const TRAFFIC = {
+  world: { w: 2048, h: 1536 },
+  carCount: 8,
+  scooterCount: 5,
+  carSpeed: [130, 180], // px/s
+  scooterSpeed: [85, 160],
+  palette: [0xc0392b, 0x3466b3, 0xf1c40f, 0xe8e8e8],
+  wrapMargin: 40, // px off-screen before a vehicle wraps
+  hitPenalty: 5, // € lost per collision
+  hitCooldown: 500, // ms between collisions counting
+  nearMissRadius: 52, // px between Glopi and a car for a near miss
+  nearMissRelSpeed: 190, // px/s closing speed needed
+  nearMissReward: 2, // € per near miss
+  nearMissCooldown: 900, // per car, ms
+};
+
+/** Pedestrians (M4). Sidewalk lines + boardwalk; bell scattering. */
+export const PEDS = {
+  count: 14,
+  speed: [40, 70], // px/s strolling
+  bumpRadius: 20, // running into a ped scatters them
+  bellRadius: 130, // SHIFT ring reaching this far
+  scatterSpeed: [180, 300], // px/s away from Glopi/bell
+  scatterDecay: 4.0, // per-second decay of the scatter velocity
+  stunTime: 0.7, // s of panicking after a bump/bell
+};
