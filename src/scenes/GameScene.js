@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS, SCORE,
+  TRAFFIC, PEDS, SCORE, JUICE,
 } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
@@ -64,6 +64,17 @@ export default class GameScene extends Phaser.Scene {
         tint: 0xffd75e,
       })
       .setDepth(30);
+
+    // juice layers (M6.1): skid marks on the asphalt + wind streaks at speed
+    this.skidGfx = this.add.graphics().setDepth(4);
+    this.linesGfx = this.add.graphics().setDepth(26);
+    this.skidMarks = []; // { x, y, a, t } pairs of wheel marks
+    this.skidClock = 0;
+    this.hopT = 0; // s left of the current take-off hop
+    this.hopCd = 0; // s until the next hop may fire
+    this.speedRef = 0; // speed sampled JUICE window ago
+    this.speedRefTimer = 0;
+    this.juiceState = { frac: 0, marks: 0, hop: 0 }; // debuggable snapshot
 
     this.keys = this.input.keyboard.addKeys(
       'W,A,S,D,UP,LEFT,DOWN,RIGHT,SPACE,SHIFT'
@@ -282,6 +293,104 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
+  /** Extra sprite rotation while a take-off hop unwinds (M6.1). */
+  hopTilt() {
+    if (this.hopT <= 0) return 0;
+    const p = this.hopT / JUICE.hopTime; // 1 → 0
+    return JUICE.hopAngle * Math.sin((1 - p) * Math.PI);
+  }
+
+  /**
+   * Juice per frame: streaks at high speed, wheelie hop on a hard kick,
+   * skid marks when the rear slips. `lateral` is the model's lateral slip.
+   */
+  updateJuice(dt, timeSec, { pedaling, lateral, speed }) {
+    const J = JUICE;
+
+    // hop trigger: watch speed over a short window, not per-frame noise;
+    // a cooldown keeps chained re-fires from reading as constant wobble
+    this.hopT = Math.max(0, this.hopT - dt);
+    this.hopCd = Math.max(0, this.hopCd - dt);
+    this.speedRefTimer -= dt;
+    if (this.speedRefTimer <= 0) {
+      const gain = speed - this.speedRef;
+      this.speedRef = speed;
+      this.speedRefTimer = 0.18;
+      if (pedaling && gain >= J.hopKick && this.hopCd <= 0) {
+        this.hopT = J.hopTime;
+        this.hopCd = J.hopTime + 0.55;
+      }
+    }
+    const hopP = this.hopT > 0 ? Math.sin((1 - this.hopT / J.hopTime) * Math.PI) : 0;
+
+    // ---- wind streaks: phase-driven sweep of short lines past the bike ----
+    const lg = this.linesGfx;
+    lg.clear();
+    const frac = Phaser.Math.Clamp(
+      (speed - J.linesAbove) / (J.linesSaturate - J.linesAbove), 0, 1
+    );
+    let drawn = 0;
+    if (frac > 0 && speed > 1) {
+      const bx = this.glopi.x;
+      const by = this.glopi.y;
+      const ux = this.vel.x / speed;
+      const uy = this.vel.y / speed;
+      const vxx = -uy; // perpendicular
+      const vyy = ux;
+      for (let i = 0; i < J.linesCount; i++) {
+        const phase = (timeSec * 0.62 + i / J.linesCount) % 1;
+        const along = Phaser.Math.Linear(J.linesSpan * 0.45, -J.linesSpan * 0.55, phase);
+        const side = (i % 2 === 0 ? 1 : -1) * (34 + ((i * 13) % 52));
+        const cx2 = bx + ux * along + vxx * side;
+        const cy2 = by + uy * along + vyy * side;
+        const a = Math.sin(phase * Math.PI) * frac * 0.5;
+        const len = Phaser.Math.Linear(J.linesLen[0], J.linesLen[1], frac);
+        lg.lineStyle(2, 0xffffff, a);
+        lg.lineBetween(
+          cx2 - ux * len / 2, cy2 - uy * len / 2,
+          cx2 + ux * len / 2, cy2 + uy * len / 2
+        );
+        drawn += 1;
+      }
+    }
+
+    // ---- skid marks: rear wheels bite the asphalt while sliding ----
+    this.skidClock -= dt;
+    if (
+      Math.abs(lateral) >= J.skidLateral && speed > 60 &&
+      this.skidClock <= 0 && this.skidMarks.length < J.skidCap
+    ) {
+      this.skidClock = J.skidGap;
+      const hx = Math.cos(this.heading);
+      const hy = Math.sin(this.heading);
+      const px2 = -hy;
+      const py2 = hx;
+      for (const side of [-8, 8]) {
+        this.skidMarks.push({
+          x: this.glopi.x - hx * 10 + px2 * side,
+          y: this.glopi.y - hy * 10 + py2 * side,
+          a: this.heading,
+          t: timeSec,
+        });
+      }
+    }
+    const alive = this.skidMarks.filter((m) => timeSec - m.t < J.skidLife);
+    this.skidMarks = alive;
+    const sg = this.skidGfx;
+    sg.clear();
+    for (const m of alive) {
+      const age = (timeSec - m.t) / J.skidLife;
+      sg.lineStyle(3, 0x15151b, 0.55 * (1 - age));
+      sg.lineBetween(
+        m.x - Math.cos(m.a) * 4, m.y - Math.sin(m.a) * 4,
+        m.x + Math.cos(m.a) * 4, m.y + Math.sin(m.a) * 4
+      );
+    }
+
+    this.juiceState = { frac, marks: alive.length, hop: Math.round(hopP * 100) / 100 };
+    return { frac, marks: alive.length, hopP };
+  }
+
   /** Audio is optional: autoplay policies can lock the context in probes. */
   playSfx(key) {
     try {
@@ -388,6 +497,7 @@ export default class GameScene extends Phaser.Scene {
     if (this.vel.length() > 20) this.heading = this.vel.angle();
 
     const paid = this.score.crash(TRAFFIC.hitPenalty); // also kills the streak
+    this.cameras.main.shake(150, 0.009); // M6: meatier impact
     if (paid > 0) {
       this.floatText(carSprite.x, carSprite.y - 34, `−€${paid} ¡AY!`, '#ff5e8b');
     } else {
@@ -395,7 +505,6 @@ export default class GameScene extends Phaser.Scene {
     }
 
     this.sparks.explode(6, this.glopi.x, this.glopi.y);
-    this.cameras.main.shake(90, 0.004);
   }
 
   drawDebug() {
@@ -478,7 +587,7 @@ export default class GameScene extends Phaser.Scene {
     this.vel.set(h.x * forward + p.x * lateral, h.y * forward + p.y * lateral);
 
     this.glopi.body.velocity.set(this.vel.x, this.vel.y);
-    this.glopi.rotation = this.heading;
+    this.glopi.rotation = this.heading + this.hopTilt();
 
     // camera: look where you're going, zoom out at speed
     const cam = this.cameras.main;
@@ -487,6 +596,11 @@ export default class GameScene extends Phaser.Scene {
     const targetZoom = 1 - CAMERA.zoomSpan * Phaser.Math.Clamp(spdNow / VEHICLE.maxSpeed, 0, 1);
     cam.setZoom(cam.zoom + (targetZoom - cam.zoom) * Math.min(1, CAMERA.zoomLerp * dt));
 
+    this.updateJuice(dt, timeMs / 1000, {
+      pedaling,
+      lateral,
+      speed: spdNow,
+    });
     this.debugVals = { forward, lateral };
     if (this.debugOn) this.drawDebug();
 

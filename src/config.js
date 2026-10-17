@@ -101,6 +101,39 @@ export const PEDS = {
 };
 
 /**
+ * M6 juice: fast-riding streaks, drift skid marks and the take-off hop.
+ * All per-second units; thresholds in px/s.
+ */
+export const JUICE = {
+  linesAbove: 215, // px/s: speed streaks start
+  linesSaturate: 330, // px/s: streaks at full strength
+  linesCount: 9, // pooled streaks (recycled by phase)
+  linesSpan: 300, // px a streak sweeps past the bike
+  linesLen: [16, 44], // px at low..full speed
+
+  skidLateral: 75, // |lateral| px/s to start marking the asphalt
+  skidGap: 0.035, // s between marked pairs
+  skidLife: 3.0, // s before a mark fades away
+  skidCap: 260, // max live marks
+
+  hopAngle: 0.24, // rad of front-lift at full hop
+  hopTime: 0.4, // s the hop takes to unwind
+  hopKick: 28, // px/s of windowed speed gain (0.18s) that triggers a hop
+};
+
+/**
+ * M6.2 dynamic music: two same-length seamless loops the scene crossfades.
+ * Chaos rises with an active order or a hot streak; calm is the baseline.
+ */
+export const MUSIC = {
+  calmBase: 0.5,
+  calmLow: 0.24,
+  chaosOn: 0.62,
+  chaosOff: 0.0,
+  lerp: 2.6, // per-second crossfade speed
+};
+
+/**
  * Scoring (M5). One wallet for the whole shift: near-miss bonuses chain
  * into a streak multiplier, delivery pay lands here, crash penalties burn.
  * `shiftLength` drives the 3-minute shift; grade thresholds rank the run.
