@@ -79,12 +79,20 @@ export default class GameScene extends Phaser.Scene {
     });
     this.orders.on('spawned', (o) =>
       this.floatText(o.restaurant.x, o.restaurant.y - 48, '¡NUEVO PEDIDO!', '#ffd75e'));
-    this.orders.on('accepted', (o) =>
-      this.floatText(o.restaurant.x, o.restaurant.y - 48, `¡Recogido! €${o.fare}`, '#7de695'));
-    this.orders.on('delivered', (o) =>
-      this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay}${o.tip > 0 ? ` (+€${o.tip} propina!)` : ''}`, '#ffd75e'));
-    this.orders.on('expired', (o) =>
-      this.floatText(o.customer.x, o.customer.y - 48, '¡Pedido perdido!', '#ff5e8b'));
+    this.orders.on('accepted', (o) => {
+      this.floatText(o.restaurant.x, o.restaurant.y - 48, `¡Recogido! €${o.fare}`, '#7de695');
+      this.playSfx('sfx-blip');
+    });
+    this.orders.on('delivered', (o) => {
+      this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay}${o.tip > 0 ? ` (+€${o.tip} propina!)` : ''}`, '#ffd75e');
+      this.playSfx('sfx-coin');
+    });
+    this.orders.on('expired', (o) => {
+      this.floatText(o.customer.x, o.customer.y - 48, '¡Pedido perdido!', '#ff5e8b');
+      this.playSfx('sfx-fail');
+    });
+
+    this.scene.launch('HUD');
 
     // pulsing zone rings + floating label
     this.orderGfx = this.add.graphics().setDepth(14);
@@ -106,7 +114,7 @@ export default class GameScene extends Phaser.Scene {
     this.debugVals = { forward: 0, lateral: 0 };
     this.debugGfx = this.add.graphics().setDepth(120);
     this.debugText = this.add
-      .text(8, 8, '', {
+      .text(8, GAME_HEIGHT - 112, '', {
         fontFamily: 'monospace',
         fontSize: '14px',
         backgroundColor: '#14142bcc',
@@ -214,6 +222,17 @@ export default class GameScene extends Phaser.Scene {
       ease: 'Sine.easeOut',
       onComplete: () => t.destroy(),
     });
+  }
+
+  /** Audio is optional: autoplay policies can lock the context in probes. */
+  playSfx(key) {
+    try {
+      if (this.cache.audio.exists(key) && this.sound.get(key)) {
+        this.sound.play(key, { volume: 0.5 });
+      }
+    } catch (_e) {
+      // locked AudioContext — stay silent, don't crash the loop
+    }
   }
 
   /** Pulsing pickup/dropoff rings + label + beacon arrow. */

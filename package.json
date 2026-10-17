@@ -5,9 +5,10 @@
   "type": "module",
   "scripts": {
     "start": "node tools/serve.mjs 3000",
-    "gen": "node tools/gen-tileset.mjs && node tools/gen-landmarks.mjs && node tools/gen-map.mjs",
+    "gen": "node tools/gen-tileset.mjs && node tools/gen-landmarks.mjs && node tools/gen-map.mjs && node tools/gen-sfx.mjs",
     "gen:art": "node tools/gen-tileset.mjs && node tools/gen-landmarks.mjs",
-    "gen:map": "node tools/gen-map.mjs"
+    "gen:map": "node tools/gen-map.mjs",
+    "gen:sfx": "node tools/gen-sfx.mjs"
   },
   "license": "MIT"
 }

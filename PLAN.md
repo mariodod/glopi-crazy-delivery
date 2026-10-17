@@ -106,11 +106,11 @@ glopi-crazy-delivery/
 - [x] Debug overlay (`H`): body outline + velocity/heading arrows + live vel/fwd/lat/heading/zoom readout for tuning
 - **Exit criteria**: Steering feels fun within 10 seconds of play; a designer could tune constants. ✔ E2E-verified: pedal 1s→300px/s cap, coast 0.67s→227, slip drifts, brake-to-stop→reverse cap, H overlay live.
 
-### M3 — Orders Core Loop
-- [ ] `OrderSystem`: order generate → pickup zone → dropoff zone → complete/ expire
-- [ ] Zone rendering: pulsing colored circles + floating markers/beacons
-- [ ] HUD: current order card, fare €, fare timer, mini arrow, first SFX
-- **Exit criteria**: Full loop playable: accept → pickup → deliver → pay+tip, next order spawns.
+### M3 — Orders Core Loop ✅ done
+- [x] `OrderSystem`: order generate → pickup zone → dropoff zone → complete/expire — plain JS (no Phaser imports, node-verified transitions), distance-scaled fare (€6 + €0.9/tile), window = 10s + 0.55s/tile, tip = fare×2×(timeLeft/total), events `spawned/accepted/delivered/expired`, respawn 1.6s
+- [x] Zone rendering: pulsing colored circles + floating markers/beacons — gold ring at restaurant / pink at customer w/ name+note labels, cyan beacon arrow bobbing above Glopi (pure vertex math), color flips by food state, floating popups ("¡Recogido!", "+€62 (+€23 propina!)", "¡Pedido perdido!")
+- [x] HUD: current order card, fare €, fare timer, mini arrow, first SFX — HUDScene overlay (top-left card: tag/name/dish/€+meters + color-tiered timer bar; top-right €totals), generated SFX via zero-dep WAV writer (`tools/gen-sfx.mjs`: coin/blip/fail), muted-safe playSfx wrapper
+- **Exit criteria**: Full loop playable: accept → pickup → deliver → pay+tip, next order spawns. ✔ E2E-verified: offered→SPACE.PERFECT accept (radius 44)→timer ticks (30→28s)→auto-deliver in drop zone (€39+€23 tip = €62·1 entrega)→respawn (new order id) + expire path (no earnings, respawn countdown); places filter rejects collider tiles (beach grill relocated rows 44-47 are sea).
 
 ### M4 — Traffic & Pedestrians
 - [ ] Cars/scooters on lane waypoints, player collision = slow down + coin penalty

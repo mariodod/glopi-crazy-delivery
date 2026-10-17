@@ -42,6 +42,9 @@ export default class PreloadScene extends Phaser.Scene {
       frameHeight: 192,
     });
     this.load.tilemapTiledJSON('barcelona', 'assets/tilemaps/barcelona.json');
+    this.load.audio('sfx-coin', 'assets/sfx/coin.wav');
+    this.load.audio('sfx-blip', 'assets/sfx/blip.wav');
+    this.load.audio('sfx-fail', 'assets/sfx/fail.wav');
   }
 
   create() {
