@@ -55,5 +55,17 @@ export function createPlaceholderTextures(scene) {
   const g = scene.add.graphics();
   drawGlopi(g);
   g.generateTexture('glopi', 32, 32);
+
+  drawSpark(g);
+  g.generateTexture('spark', 4, 4);
+
   g.destroy();
+}
+
+/** Small white-hot spark pixel for wall impact particles. */
+function drawSpark(g) {
+  g.fillStyle(0xffd75e, 1);
+  g.fillCircle(2, 2, 2);
+  g.fillStyle(0xffffff, 1);
+  g.fillRect(1, 1, 2, 2);
 }
