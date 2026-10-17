@@ -99,3 +99,13 @@ export const PEDS = {
   scatterDecay: 4.0, // per-second decay of the scatter velocity
   stunTime: 0.7, // s of panicking after a bump/bell
 };
+
+/**
+ * Scoring (M5). One wallet for the whole shift: near-miss bonuses chain
+ * into a streak multiplier, delivery pay lands here, crash penalties burn.
+ */
+export const SCORE = {
+  streakWindow: 5, // s — consecutive near-misses within this window chain
+  multStep: 0.5, // multiplier gain per streak step (x1, x1.5, x2, …)
+  multMax: 3, // bonus multiplier cap
+};

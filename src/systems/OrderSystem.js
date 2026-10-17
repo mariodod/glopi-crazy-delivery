@@ -39,7 +39,6 @@ export class OrderSystem {
     this.lastRestaurant = null;
     this.orderSeq = 0;
     this.totalDelivered = 0;
-    this.earnings = 0;
     this.respawnIn = 0; // s; 0 → spawns on the first update()
   }
 
@@ -132,7 +131,6 @@ export class OrderSystem {
     o.state = 'delivered';
     this.current = null;
     this.totalDelivered += 1;
-    this.earnings += o.pay;
     this.respawnIn = this.cfg.respawnDelay;
     this.emit('delivered', o);
     return true;

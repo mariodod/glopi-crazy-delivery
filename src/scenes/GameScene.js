@@ -2,11 +2,12 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS,
+  TRAFFIC, PEDS, SCORE,
 } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
+import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
 /** Middle of La Rambla (cols 32-33), heading north. */
@@ -73,6 +74,9 @@ export default class GameScene extends Phaser.Scene {
       this.scene.start('Menu');
     });
 
+    // ---- Scoring (M5) — the single wallet ... ----------------------------
+    this.score = new ScoreSystem(SCORE);
+
     // ---- Orders core loop (M3) -------------------------------------------
     this.orders = new OrderSystem({
       restaurants: this.pickPassable(RESTAURANTS),
@@ -87,6 +91,7 @@ export default class GameScene extends Phaser.Scene {
     });
     this.orders.on('delivered', (o) => {
       this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay}${o.tip > 0 ? ` (+€${o.tip} propina!)` : ''}`, '#ffd75e');
+      this.score.deliver(o.pay);
       this.playSfx('sfx-coin');
     });
     this.orders.on('expired', (o) => {
@@ -103,10 +108,12 @@ export default class GameScene extends Phaser.Scene {
     this.dwellVisual = null;
     this.traffic.on('bumped', (p) =>
       this.floatText(p.x, p.y - 20, '¡AY!', '#9aa4ad'));
-    // near-miss bonus: weave close past a car at speed and get paid for it
+    // near-miss bonus: weave close past a car at speed and get paid for it —
+    // chains build a streak multiplier (x1 → x1.5 → x2 …)
     this.traffic.on('nearmiss', (p) => {
-      this.orders.earnings += p.amount;
-      this.floatText(p.x, p.y - 30, `¡CASI! +€${p.amount}`, '#ffd75e');
+      const amount = this.score.nearMiss(TRAFFIC.nearMissReward);
+      const x = amount > TRAFFIC.nearMissReward ? ` · x${this.score.streak}!!` : '';
+      this.floatText(p.x, p.y - 30, `¡CASI! +€${amount}${x}`, '#ffd75e');
       this.playSfx('sfx-coin');
     });
 
@@ -369,13 +376,11 @@ export default class GameScene extends Phaser.Scene {
     this.vel.scale(0.55); // "you really got hit" slowdown
     if (this.vel.length() > 20) this.heading = this.vel.angle();
 
-    if (this.orders) {
-      const before = this.orders.earnings;
-      this.orders.earnings = Math.max(0, this.orders.earnings - TRAFFIC.hitPenalty);
-      const spent = Math.round(before - this.orders.earnings);
-      if (spent > 0) {
-        this.floatText(carSprite.x, carSprite.y - 34, `−€${spent} ¡AY!`, '#ff5e8b');
-      }
+    const paid = this.score.crash(TRAFFIC.hitPenalty); // also kills the streak
+    if (paid > 0) {
+      this.floatText(carSprite.x, carSprite.y - 34, `−€${paid} ¡AY!`, '#ff5e8b');
+    } else {
+      this.floatText(carSprite.x, carSprite.y - 34, '¡AY!', '#ff5e8b');
     }
 
     this.sparks.explode(6, this.glopi.x, this.glopi.y);
@@ -514,6 +519,7 @@ export default class GameScene extends Phaser.Scene {
 
     // ---- orders core loop (M3/M4) ----
     this.orders.update(dt);
+    this.score.update(dt); // streak window heartbeat
 
     // stop-to-act: coming fully to a halt inside a zone picks up (restaurant)
     // or delivers (customer) — no buttons. Leaving the zone or braking off

@@ -42,9 +42,13 @@ export default class HUDScene extends Phaser.Scene {
   update() {
     const game = this.scene.get('Game');
     const sys = game && game.orders;
-    if (!sys) return;
+    const score = game && game.score;
+    if (!sys || !score) return;
     this.barGfx.clear();
-    this.statsText.setText(`€${Math.round(sys.earnings)} · ${sys.totalDelivered} entrega${sys.totalDelivered === 1 ? '' : 's'}`);
+    this.statsText.setText(
+      `€${Math.round(score.money)} · ${sys.totalDelivered} entrega${sys.totalDelivered === 1 ? '' : 's'}` +
+      (score.bestStreak > 1 ? ` · racha x${score.bestStreak}` : '')
+    );
 
     const o = sys.order;
     if (!o) {
