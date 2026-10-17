@@ -99,11 +99,12 @@ glopi-crazy-delivery/
 - **Exit criteria**: Glopi rides a readable Barcelona grid, can't pass through buildings. ✔ E2E-verified in-browser: map size 2048×1536, collides properties parsed, roof + sea blocking on a rect body, sidewalk gaps passable, 3 landmarks rendered.
 > Note: Tiled GUI never installed — the map is generated deterministic-by-seed in the exact Tiled JSON format, so it can still be opened/edited in Tiled later if needed.
 
-### M2 — Bike Arcade Physics
-- [ ] Arcade Physics body + custom acceleration/friction curve
-- [ ] Drift feel testing, camera follow with lookahead + slight zoom out at speed
-- [ ] Wall collision response (bounce + spark particle)
-- **Exit criteria**: Steering feels fun within 10 seconds of play; a designer could tune constants.
+### M2 — Bike Arcade Physics ✅ done
+- [x] Arcade Physics body + custom acceleration/friction curve — heading-based model: heading steers, velocity is re-projected onto the **post-steering** basis each frame so slip can accumulate (drift arcs), grip (per-second exp damping) eats lateral slip, drift bleeds forward speed. Throttle / brake / reverse capped at -90px/s, coast drag, all per-second units in `VEHICLE` (`src/config.js`)
+- [x] Drift feel testing, camera follow with lookahead + slight zoom out at speed — E2E: mid-turn velocity lags heading, slip accumulates outward (−31→−59px/s), grip kills it after release; camera offset = velocity×lookahead, zoom 1→0.9 at top speed
+- [x] Wall collision response (bounce + spark particle) — collider callback reflects toggle vel×restitution 0.35 along the blocked normal, realigns heading to outgoing velocity, bursts 8 gold sparks + micro shake, cooldown 220ms. E2E-verified: (0,−170)→(0,+124), heading→+1.57 (south), sparksAlive=8
+- [x] Debug overlay (`H`): body outline + velocity/heading arrows + live vel/fwd/lat/heading/zoom readout for tuning
+- **Exit criteria**: Steering feels fun within 10 seconds of play; a designer could tune constants. ✔ E2E-verified: pedal 1s→300px/s cap, coast 0.67s→227, slip drifts, brake-to-stop→reverse cap, H overlay live.
 
 ### M3 — Orders Core Loop
 - [ ] `OrderSystem`: order generate → pickup zone → dropoff zone → complete/ expire
