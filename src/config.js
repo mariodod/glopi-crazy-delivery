@@ -40,3 +40,26 @@ export const IMPACT = {
 
 /** Keyboard toggle for the velocity/debug overlay. */
 export const DEBUG_KEY = 'H';
+
+/**
+ * Orders core loop (M3). Zones are radius checks against Glopi's center.
+ * All time units are seconds, fares in €. tipMax multiplies the base fare
+ * at full remaining time — time tiers become a proper meter in M5.
+ */
+export const ORDER = {
+  pickupRadius: 44, // px — drive into the restaurant ring, press SPACE
+  dropRadius: 44, // px — customer zone auto-completes
+  fareBase: 6, // € regardless of distance
+  farePerTile: 0.9, // € per tile (32px) of restaurant→customer distance
+  timeBase: 10, // s of free time
+  timePerTile: 0.55, // s per tile of route (≈2.5x straight-line cruise)
+  tipMax: 2.0, // max tip at full time left = fare × tipMax
+  respawnDelay: 1.6, // s before the next order appears
+};
+
+/** Zone render palette (pulsing rings + beacon arrow). */
+export const ZONE = {
+  offerColor: 0xffcf40, // gold = order waiting at a restaurant
+  activeColor: 0xff5e8b, // pink = customer waiting for the delivery
+  beaconColor: 0x66d9e8, // arrow above Glopi pointing at the target
+};
