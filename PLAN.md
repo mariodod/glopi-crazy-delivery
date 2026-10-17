@@ -119,11 +119,11 @@ glopi-crazy-delivery/
 - [x] Stop-to-act rework (user change): pickup AND delivery both trigger by fully stopping inside the zone (SPACE accept removed) — 22px/s stop gate + 0.65s dwell, white progress arc fills the ring while braking, HUD hint "FRENA EN EL CÍRCULO"; E2E: sustained roll (≥73px/s) never accepts, 0.2s partial dwell never accepts, held stop accepts ("¡Recogido!"), stopped delivery pays (+€123 incl. tip)
 - **Exit criteria**: Navigating traffic feels risky but fair; near-misses are readable. ✔ E2E-verified: lane invariants + deterministic travel (browser F-steps: move ≈ speed·dt along lane.dir, wrap at hi+margin), car hit (earnings 44→39, popup, cooldown, no repeat), landmark zones stop the bike at predicted rebound (minY 1222 / predicted 1222), ped bump (stun + scatter + "¡AY!", earnings untouched), SHIFT bell (staged ped stunned + "¡DING!"), staged head-on pass (relV≥190) → exactly +€2 one time, zero console errors.
 
-### M5 — Score, Combos & Rank… and Session Timer
-- [ ] ScoreSystem: base fare + time bonus + near-miss streak multiplier
-- [ ] Tip tiers (Green/Yellow/Orange/Red zone like Crazy Taxi)
-- [ ] 3-min shift timer, results screen (rank, best combo, money)
-- **Exit criteria**: One full 3-minute round with end screen, rank persistence via localStorage.
+### M5 — Score, Combos & Rank… and Session Timer ✅ done
+- [x] ScoreSystem: base fare + time bonus + near-miss streak multiplier — `ScoreSystem` (pure JS, node-verified) is the single wallet: near-misses chain within a 5s window into x1 → x1.5 → … → x3 (capped) bonuses on the same €2 base, delivery pay lands here (`score.deliver`), crash = instant chain break + −€5 floored at €0; HUD stats line reads the wallet (`€214 · 2 entregas · racha x2`)
+- [x] Tip tiers (Green/Yellow/Orange/Red zone like Crazy Taxi) — pure `tipTier()` mapping (≥55%/1.0, ≥30%/0.6, ≥12%/0.3, <12%/0.1 of `fare×tipMax`), delivery popups `+€132 · ¡RÁPIDO!` in tier color, HUD tag shows the live tier word + tier-colored time bar
+- [x] 3-min shift timer, results screen (rank, best combo, money) — `shiftEnd` event (fires exactly once), input-hands-off freeze (bike coasts while traffic keeps rolling behind), `ResultsScene` card: rank letter S/A/B/C/D (score = entregas×3 + racha×2 + €/25), totals, prompt for a new shift via SPACE; best shift persisted to localStorage (`glopi-best`), "¡NUEVO RÉCORD!" and guard against worse runs overwriting
+- **Exit criteria**: One full 3-minute round with end screen, rank persistence via localStorage. ✔ E2E-verified: 2 deliveries (€201) → forced shift end → Results card grade C + snapshot (EUR 201/2/mejor racha x0) + stored; SPACE restart → fresh €0 shift, Results stopped, best kept; empty D-grade run did NOT overwrite €201; node: single shiftEnd fire, snapshot fields, all grade thresholds (D/C/B/A/S); zero console errors.
 
 ### M6 — Polish & Juice
 - [ ] Screen shake on collisions, speed lines, wheelie trick on jumps
