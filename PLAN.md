@@ -112,11 +112,11 @@ glopi-crazy-delivery/
 - [x] HUD: current order card, fare €, fare timer, mini arrow, first SFX — HUDScene overlay (top-left card: tag/name/dish/€+meters + color-tiered timer bar; top-right €totals), generated SFX via zero-dep WAV writer (`tools/gen-sfx.mjs`: coin/blip/fail), muted-safe playSfx wrapper
 - **Exit criteria**: Full loop playable: accept → pickup → deliver → pay+tip, next order spawns. ✔ E2E-verified: offered→SPACE.PERFECT accept (radius 44)→timer ticks (30→28s)→auto-deliver in drop zone (€39+€23 tip = €62·1 entrega)→respawn (new order id) + expire path (no earnings, respawn countdown); places filter rejects collider tiles (beach grill relocated rows 44-47 are sea).
 
-### M4 — Traffic & Pedestrians
-- [ ] Cars/scooters on lane waypoints, player collision = slow down + coin penalty
-- [ ] Pedestrians on sidewalks; bell scatters them
-- [ ] Near-miss detector (+€ floating text "CASI!!")
-- **Exit criteria**: Navigating traffic feels risky but fair; near-misses are readable.
+### M4 — Traffic & Pedestrians ✅ done
+- [x] Cars/scooters on lane waypoints, player collision = slow down + coin penalty — `TrafficSystem` (pure JS, node-verified): right-hand two-way lanes on the street grid (H rows 2-38 / V cols 2-62, Rambla excluded), 8 cars + 5 swaying scooters, edge wrap; immovable arcade bodies synced from the system; hit = soft bounce + vel×0.55 + −€5 + "−€5 ¡AY!" popup + sparks + shake (500ms cooldown). Landmark bases got their promised collision zones (sagrada/glòries/arc, invisible static rects)
+- [x] Pedestrians on sidewalks; bell scatters them — 14 peds on block-ring sidewalk lines + boardwalk + Rambla; bump/bell = burst away + stun 0.7s + panic spin + tint flash, re-bumpable after stun; SHIFT ring (130px) = scatter all + "¡DING!" + generated bell.wav (G6→C7)
+- [x] Near-miss detector (+€ floating text "CASI!!") — within 52px while riding (>120px/s) with ≥190px/s closing speed; per-car 900ms cooldown; +€2, "¡CASI! +€2" gold popup, coin sfx
+- **Exit criteria**: Navigating traffic feels risky but fair; near-misses are readable. ✔ E2E-verified: lane invariants + deterministic travel (browser F-steps: move ≈ speed·dt along lane.dir, wrap at hi+margin), car hit (earnings 44→39, popup, cooldown, no repeat), landmark zones stop the bike at predicted rebound (minY 1222 / predicted 1222), ped bump (stun + scatter + "¡AY!", earnings untouched), SHIFT bell (staged ped stunned + "¡DING!"), staged head-on pass (relV≥190) → exactly +€2 one time, zero console errors.
 
 ### M5 — Score, Combos & Rank… and Session Timer
 - [ ] ScoreSystem: base fare + time bonus + near-miss streak multiplier
