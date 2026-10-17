@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS, SCORE, JUICE,
+  TRAFFIC, PEDS, SCORE, JUICE, MUSIC,
 } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
@@ -75,6 +75,26 @@ export default class GameScene extends Phaser.Scene {
     this.speedRef = 0; // speed sampled JUICE window ago
     this.speedRefTimer = 0;
     this.juiceState = { frac: 0, marks: 0, hop: 0 }; // debuggable snapshot
+
+    // ---- music (M6.2): seamless calm/chaos loops the mixer crossfades ----
+    this.music = null;
+    const startMusic = () => {
+      try {
+        const calm = this.sound.add('music-calm', { loop: true, volume: MUSIC.calmBase });
+        const chaos = this.sound.add('music-chaos', { loop: true, volume: MUSIC.chaosOff });
+        calm.play();
+        chaos.play();
+        this.music = { calm, chaos };
+      } catch (_e) { /* no audio backend available */ }
+    };
+    if (this.sound.locked) this.sound.once('unlocked', startMusic);
+    else startMusic();
+    this.events.once('shutdown', () => {
+      if (this.music) {
+        this.music.calm.stop();
+        this.music.chaos.stop();
+      }
+    });
 
     this.keys = this.input.keyboard.addKeys(
       'W,A,S,D,UP,LEFT,DOWN,RIGHT,SPACE,SHIFT'
@@ -391,6 +411,18 @@ export default class GameScene extends Phaser.Scene {
     return { frac, marks: alive.length, hopP };
   }
 
+  /** Crossfade the calm/chaos loop pair by game state (M6.2). */
+  mixMusic(dt) {
+    if (!this.music) return;
+    const hot = !this.shiftOver &&
+      (this.orders.order?.state === 'active' || this.score.streak > 0);
+    const k = Math.min(1, MUSIC.lerp * dt);
+    const cV = this.music.calm.volume;
+    this.music.calm.setVolume(cV + ((hot ? MUSIC.calmLow : MUSIC.calmBase) - cV) * k);
+    const eV = this.music.chaos.volume;
+    this.music.chaos.setVolume(eV + ((hot ? MUSIC.chaosOn : MUSIC.chaosOff) - eV) * k);
+  }
+
   /** Audio is optional: autoplay policies can lock the context in probes. */
   playSfx(key) {
     try {
@@ -647,6 +679,7 @@ export default class GameScene extends Phaser.Scene {
 
     // ---- orders core loop (M3/M4) ----
     this.score.update(dt); // chain heartbeat + shift countdown (emits shiftEnd)
+    this.mixMusic(dt); // M6.2: calm/chaos crossfade follows the action
     if (!this.shiftOver) {
       this.orders.update(dt);
 

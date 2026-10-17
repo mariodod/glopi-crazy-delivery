@@ -46,6 +46,8 @@ export default class PreloadScene extends Phaser.Scene {
     this.load.audio('sfx-blip', 'assets/sfx/blip.wav');
     this.load.audio('sfx-fail', 'assets/sfx/fail.wav');
     this.load.audio('sfx-bell', 'assets/sfx/bell.wav');
+    this.load.audio('music-calm', 'assets/sfx/music-calm.wav');
+    this.load.audio('music-chaos', 'assets/sfx/music-chaos.wav');
   }
 
   create() {
