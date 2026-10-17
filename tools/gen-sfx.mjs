@@ -72,4 +72,10 @@ writeWav(join(sfxDir, 'fail.wav'), build(0.45, [
   { freq: 246.94, gain: 0.55, t0: 0.15, dur: 0.3, decay: 10 },
 ]));
 
-console.log('generated: assets/sfx/coin.wav, assets/sfx/blip.wav, assets/sfx/fail.wav');
+// bell.wav — bike bell: two rising dings (G6 → C7), bright and short
+writeWav(join(sfxDir, 'bell.wav'), build(0.5, [
+  { freq: 1567.98, gain: 0.45, t0: 0, dur: 0.12, decay: 26 },
+  { freq: 2093.0, gain: 0.55, t0: 0.11, dur: 0.34, decay: 11 },
+]));
+
+console.log('generated: assets/sfx/coin.wav, assets/sfx/blip.wav, assets/sfx/fail.wav, assets/sfx/bell.wav');

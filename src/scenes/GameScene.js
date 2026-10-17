@@ -65,7 +65,7 @@ export default class GameScene extends Phaser.Scene {
       .setDepth(30);
 
     this.keys = this.input.keyboard.addKeys(
-      'W,A,S,D,UP,LEFT,DOWN,RIGHT,SPACE'
+      'W,A,S,D,UP,LEFT,DOWN,RIGHT,SPACE,SHIFT'
     );
 
     this.input.keyboard.once('keydown-ESC', () => {
@@ -98,6 +98,8 @@ export default class GameScene extends Phaser.Scene {
 
     // ---- Traffic + pedestrians (M4) --------------------------------------
     this.traffic = new TrafficSystem({ traffic: TRAFFIC, peds: PEDS });
+    this.traffic.on('bumped', (p) =>
+      this.floatText(p.x, p.y - 20, '¡AY!', '#9aa4ad'));
 
     // landmark bases keep their collision (traffic milestone promised it):
     // invisible static rects where the sprites stand.
@@ -475,6 +477,15 @@ export default class GameScene extends Phaser.Scene {
           s.rotation = Math.sin(secs * 6 + ped.phase) * 0.1;
           s.clearTint();
         }
+      }
+    }
+
+    // bike bell (SHIFT): scatter nearby pedestrians
+    if (Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)) {
+      const scattered = this.traffic.bell(this.glopi.x, this.glopi.y);
+      this.playSfx('sfx-bell');
+      if (scattered > 0) {
+        this.floatText(this.glopi.x, this.glopi.y - 46, '¡DING!', '#ffd75e');
       }
     }
 
