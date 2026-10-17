@@ -90,7 +90,8 @@ export default class GameScene extends Phaser.Scene {
       this.playSfx('sfx-blip');
     });
     this.orders.on('delivered', (o) => {
-      this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay}${o.tip > 0 ? ` (+€${o.tip} propina!)` : ''}`, '#ffd75e');
+      // full pay + crazy-taxi-grade word: `+€132 · ¡RÁPIDO!`, tier-colored
+      this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay} · ${o.tier.word}`, o.tier.color);
       this.score.deliver(o.pay);
       this.playSfx('sfx-coin');
     });

@@ -6,6 +6,25 @@
  * Events:         'spawned', 'accepted', 'delivered', 'expired'
  *                 (each emits the order object as payload)
  */
+/**
+ * Crazy-Taxi-style tip tiers: how much delivery time is left decides the
+ * tip multiplier. Used by OrderSystem (money math) and the HUD (colors).
+ *   GREEN  ≥ 55%  — full tip
+ *   YELLOW ≥ 30%  — 60% tip
+ *   ORANGE ≥ 12%  — 30% tip
+ *   RED    < 12%  — 10% tip
+ */
+export const TIERS = [
+  { key: 'GREEN', at: 0.55, mult: 1.0, word: '¡RÁPIDO!', color: '#7de695' },
+  { key: 'YELLOW', at: 0.30, mult: 0.6, word: 'BIEN', color: '#ffd75e' },
+  { key: 'ORANGE', at: 0.12, mult: 0.3, word: 'TARDE', color: '#ff9e42' },
+  { key: 'RED', at: 0, mult: 0.1, word: 'LENTO', color: '#ff5e8b' },
+];
+
+export function tipTier(frac) {
+  return TIERS.find((t) => frac >= t.at) ?? TIERS[TIERS.length - 1];
+}
+
 export class OrderSystem {
   /** @param config  ORDER block from src/config.js */
   constructor({ restaurants, customers, config, rng = Math.random }) {
@@ -129,6 +148,10 @@ export class OrderSystem {
     o.tip = Math.round(o.fare * this.cfg.tipMax * (o.timeLeft / o.timeTotal));
     o.pay = o.fare + o.tip;
     o.state = 'delivered';
+    const tier = tipTier(o.timeLeft / o.timeTotal);
+    o.tip = Math.round(o.fare * this.cfg.tipMax * tier.mult);
+    o.pay = o.fare + o.tip;
+    o.tier = tier;
     this.current = null;
     this.totalDelivered += 1;
     this.respawnIn = this.cfg.respawnDelay;

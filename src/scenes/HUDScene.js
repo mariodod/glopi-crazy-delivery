@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
+import { tipTier } from '../systems/OrderSystem.js';
 
 const MONO = { fontFamily: 'monospace' };
 
@@ -66,11 +67,12 @@ export default class HUDScene extends Phaser.Scene {
       this.fareText.setText(`€${o.fare} · ${Math.round(o.routePx / 32)}m`);
     } else {
       const frac = Phaser.Math.Clamp(o.timeLeft / o.timeTotal, 0, 1);
-      this.tagText.setText('ENTREGA').setColor(frac > 0.4 ? '#ff8aa4' : '#ff5e8b');
+      const tier = tipTier(frac);
+      this.tagText.setText('ENTREGA · ' + tier.word).setColor(tier.color);
       this.nameText.setText(o.customer.name);
       this.subText.setText(o.customer.note);
       this.fareText.setText(`€${o.fare} · ${this.playerMeters(o.customer)}m`);
-      const color = frac > 0.5 ? 0x51e07a : frac > 0.25 ? 0xffd75e : 0xff5e8b;
+      const color = parseInt(tier.color.slice(1), 16);
       this.barGfx.fillStyle(0x2b2b45, 1);
       this.barGfx.fillRect(24, 100, 280, 8);
       this.barGfx.fillStyle(color, 1);
