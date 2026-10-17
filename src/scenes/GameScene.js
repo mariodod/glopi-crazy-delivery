@@ -74,8 +74,9 @@ export default class GameScene extends Phaser.Scene {
       this.scene.start('Menu');
     });
 
-    // ---- Scoring (M5) — the single wallet ... ----------------------------
+    // ---- Scoring (M5) — the single wallet -------------------------------
     this.score = new ScoreSystem(SCORE);
+    this.score.on('shiftEnd', (snap) => this.endShift(snap));
 
     // ---- Orders core loop (M3) -------------------------------------------
     this.orders = new OrderSystem({
@@ -363,6 +364,15 @@ export default class GameScene extends Phaser.Scene {
     );
   }
 
+  /** Shift's up: no more orders, the results card takes over the screen. */
+  endShift(snapshot) {
+    this.orders.reset(); // clears zones, HUD card and the beacon
+    this.dwellVisual = null;
+    this.dwellPickup = 0;
+    this.dwellDrop = 0;
+    this.scene.launch('Results', { ...snapshot, grade: this.score.grade() });
+  }
+
   /** Car collision: bounce like a soft wall + coin penalty + sparks. */
   onCarHit(_glopi, carSprite) {
     const now = this.time.now;
@@ -422,9 +432,12 @@ export default class GameScene extends Phaser.Scene {
     const dt = Math.min(deltaRaw, 50) / 1000; // frame-rate independent, capped
     const { W, A, S, D, UP, LEFT, DOWN, RIGHT } = this.keys;
 
-    const steer = (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
-    const pedaling = W.isDown || UP.isDown;
-    const braking = S.isDown || DOWN.isDown;
+    // shift is over: hands off the handlebars, the bike coasts to a stop
+    // while the world keeps rolling behind the results card
+    const blockInput = this.shiftOver === true;
+    const steer = blockInput ? 0 : (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
+    const pedaling = !blockInput && (W.isDown || UP.isDown);
+    const braking = !blockInput && (S.isDown || DOWN.isDown);
 
     const V = VEHICLE;
 
@@ -519,44 +532,46 @@ export default class GameScene extends Phaser.Scene {
     }
 
     // ---- orders core loop (M3/M4) ----
-    this.orders.update(dt);
-    this.score.update(dt); // streak window heartbeat
+    this.score.update(dt); // chain heartbeat + shift countdown (emits shiftEnd)
+    if (!this.shiftOver) {
+      this.orders.update(dt);
 
-    // stop-to-act: coming fully to a halt inside a zone picks up (restaurant)
-    // or delivers (customer) — no buttons. Leaving the zone or braking off
-    // resets the dwell.
-    const stopSpd = this.vel.length();
-    this.dwellVisual = null;
+      // stop-to-act: coming fully to a halt inside a zone picks up (restaurant)
+      // or delivers (customer) — no buttons. Leaving the zone or braking off
+      // resets the dwell.
+      const stopSpd = this.vel.length();
+      this.dwellVisual = null;
 
-    this.dwellPickup = this.orders.inPickupRange(this.glopi.x, this.glopi.y) && stopSpd < ORDER.stopSpeed
-      ? this.dwellPickup + dt
-      : 0;
-    if (this.dwellPickup >= ORDER.stopTime) {
-      this.orders.tryAccept(this.glopi.x, this.glopi.y);
-      this.dwellPickup = 0;
-    }
+      this.dwellPickup = this.orders.inPickupRange(this.glopi.x, this.glopi.y) && stopSpd < ORDER.stopSpeed
+        ? this.dwellPickup + dt
+        : 0;
+      if (this.dwellPickup >= ORDER.stopTime) {
+        this.orders.tryAccept(this.glopi.x, this.glopi.y);
+        this.dwellPickup = 0;
+      }
 
-    this.dwellDrop = this.orders.inDropRange(this.glopi.x, this.glopi.y) && stopSpd < ORDER.stopSpeed
-      ? this.dwellDrop + dt
-      : 0;
-    if (this.dwellDrop >= ORDER.stopTime) {
-      this.orders.tryDeliver(this.glopi.x, this.glopi.y);
-      this.dwellDrop = 0;
-    }
+      this.dwellDrop = this.orders.inDropRange(this.glopi.x, this.glopi.y) && stopSpd < ORDER.stopSpeed
+        ? this.dwellDrop + dt
+        : 0;
+      if (this.dwellDrop >= ORDER.stopTime) {
+        this.orders.tryDeliver(this.glopi.x, this.glopi.y);
+        this.dwellDrop = 0;
+      }
 
-    // dwell feedback for drawOrderZones: the zone being filled and its ratio
-    if (this.dwellPickup > 0.02) {
-      this.dwellVisual = {
-        place: this.orders.order?.restaurant,
-        radius: ORDER.pickupRadius,
-        ratio: Math.min(1, this.dwellPickup / ORDER.stopTime),
-      };
-    } else if (this.dwellDrop > 0.02) {
-      this.dwellVisual = {
-        place: this.orders.order?.customer,
-        radius: ORDER.dropRadius,
-        ratio: Math.min(1, this.dwellDrop / ORDER.stopTime),
-      };
+      // dwell feedback for drawOrderZones: the zone being filled and its ratio
+      if (this.dwellPickup > 0.02) {
+        this.dwellVisual = {
+          place: this.orders.order?.restaurant,
+          radius: ORDER.pickupRadius,
+          ratio: Math.min(1, this.dwellPickup / ORDER.stopTime),
+        };
+      } else if (this.dwellDrop > 0.02) {
+        this.dwellVisual = {
+          place: this.orders.order?.customer,
+          radius: ORDER.dropRadius,
+          ratio: Math.min(1, this.dwellDrop / ORDER.stopTime),
+        };
+      }
     }
 
     this.drawOrderZones(timeMs);

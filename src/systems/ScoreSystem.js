@@ -17,6 +17,7 @@ export class ScoreSystem {
       nearmiss: new Set(),
       deliver: new Set(),
       crash: new Set(),
+      shiftEnd: new Set(),
     };
     this.reset();
   }
@@ -40,9 +41,11 @@ export class ScoreSystem {
     this.earnedFromMisses = 0; // total bonuses earned from near misses
     this.penalties = 0; // total € actually paid out on crashes
     this.deliveries = 0;
+    this.shiftLeft = this.cfg.shiftLength ?? 180;
+    this.shiftOver = false;
   }
 
-  /** Chain window heartbeat; call once per frame. */
+  /** Chain window + shift countdown; call once per frame. */
   update(dt) {
     if (this.streakLeft > 0) {
       this.streakLeft -= dt;
@@ -51,6 +54,44 @@ export class ScoreSystem {
         this.streak = 0;
       }
     }
+
+    if (!this.shiftOver) {
+      this.shiftLeft -= dt;
+      if (this.shiftLeft <= 0) {
+        this.shiftLeft = 0;
+        this.shiftOver = true;
+        this.emit('shiftEnd', this.snapshot());
+      }
+    }
+  }
+
+  /** Full run summary for the results screen. */
+  snapshot() {
+    return {
+      money: this.money,
+      deliveries: this.deliveries,
+      bestStreak: this.bestStreak,
+      nearMisses: this.nearMisses,
+      bonuses: this.earnedFromMisses,
+      penalties: this.penalties,
+    };
+  }
+
+  /**
+   * Rank letter: weighted score of delivery count, best streak and money.
+   * Value = deliveries×3 + bestStreak×2 + floor(money/25), then thresholds.
+   */
+  grade() {
+    const value =
+      this.deliveries * 3 +
+      this.bestStreak * 2 +
+      Math.floor(this.money / 25);
+    const { grades } = this.cfg;
+    if (value >= grades.S) return 'S';
+    if (value >= grades.A) return 'A';
+    if (value >= grades.B) return 'B';
+    if (value >= grades.C) return 'C';
+    return 'D';
   }
 
   /** Current bonus multiplier for a fresh near-miss (before it chains). */

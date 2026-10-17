@@ -35,6 +35,11 @@ export default class HUDScene extends Phaser.Scene {
       .text(GAME_WIDTH - 12, 12, '', { ...MONO, fontSize: '14px', color: '#e9e9f5', align: 'right' })
       .setOrigin(1, 0);
 
+    // shift countdown (M5.3), top-center
+    this.shiftText = this.add
+      .text(GAME_WIDTH / 2, 12, '', { ...MONO, fontSize: '18px', color: '#e9e9f5' })
+      .setOrigin(0.5, 0);
+
     // collision with the world-space debug overlay (game draws it at the same corner)
     const game = this.scene.get('Game');
     if (game && game.debugText) game.debugText.setPosition(8, GAME_HEIGHT - 112);
@@ -50,6 +55,11 @@ export default class HUDScene extends Phaser.Scene {
       `€${Math.round(score.money)} · ${sys.totalDelivered} entrega${sys.totalDelivered === 1 ? '' : 's'}` +
       (score.bestStreak > 1 ? ` · racha x${score.bestStreak}` : '')
     );
+
+    const secs = Math.max(0, Math.ceil(score.shiftLeft));
+    this.shiftText
+      .setText(`TURNO ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`)
+      .setColor(secs <= 20 ? '#ff5e8b' : '#e9e9f5');
 
     const o = sys.order;
     if (!o) {

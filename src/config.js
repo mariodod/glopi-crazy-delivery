@@ -103,9 +103,12 @@ export const PEDS = {
 /**
  * Scoring (M5). One wallet for the whole shift: near-miss bonuses chain
  * into a streak multiplier, delivery pay lands here, crash penalties burn.
+ * `shiftLength` drives the 3-minute shift; grade thresholds rank the run.
  */
 export const SCORE = {
   streakWindow: 5, // s — consecutive near-misses within this window chain
   multStep: 0.5, // multiplier gain per streak step (x1, x1.5, x2, …)
   multMax: 3, // bonus multiplier cap
+  shiftLength: 180, // s — a full Glopo shift
+  grades: { S: 45, A: 32, B: 20, C: 10 }, // rank thresholds (score = d·3 + streak·2 + money/25), D below C
 };
