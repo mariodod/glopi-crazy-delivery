@@ -15,7 +15,7 @@ export const RESTAURANTS = [
   { name: 'Sushi Diagonal', dish: 'salmon moodon', x: 1616, y: 464 },
   { name: 'Bocadillos Rajoli', dish: 'calamari borracho', x: 1424, y: 1040 },
   { name: 'Kebab Arc de Triomf', dish: 'kebab tañerino doble', x: 1232, y: 80 },
-  { name: 'Chorna Beach Grill', dish: 'fideuà a la mar', x: 656, y: 1424 },
+  { name: 'Chorna Beach Grill', dish: 'fideuà a la mar', x: 656, y: 1360 },
 ];
 
 export const CUSTOMERS = [

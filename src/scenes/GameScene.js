@@ -1,9 +1,11 @@
 import * as Phaser from 'phaser';
 
 import {
-  GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY,
+  GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
 } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
+import { OrderSystem } from '../systems/OrderSystem.js';
+import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
 /** Middle of La Rambla (cols 32-33), heading north. */
 const SPAWN = { x: 1056, y: 288, heading: -Math.PI / 2 };
@@ -61,10 +63,43 @@ export default class GameScene extends Phaser.Scene {
       .setDepth(30);
 
     this.keys = this.input.keyboard.addKeys(
-      'W,A,S,D,UP,LEFT,DOWN,RIGHT'
+      'W,A,S,D,UP,LEFT,DOWN,RIGHT,SPACE'
     );
 
-    this.input.keyboard.once('keydown-ESC', () => this.scene.start('Menu'));
+    this.input.keyboard.once('keydown-ESC', () => {
+      this.scene.stop('HUD'); // overlay scene (M3.3); no-op if not running
+      this.scene.start('Menu');
+    });
+
+    // ---- Orders core loop (M3) -------------------------------------------
+    this.orders = new OrderSystem({
+      restaurants: this.pickPassable(RESTAURANTS),
+      customers: this.pickPassable(CUSTOMERS),
+      config: ORDER,
+    });
+    this.orders.on('spawned', (o) =>
+      this.floatText(o.restaurant.x, o.restaurant.y - 48, '¡NUEVO PEDIDO!', '#ffd75e'));
+    this.orders.on('accepted', (o) =>
+      this.floatText(o.restaurant.x, o.restaurant.y - 48, `¡Recogido! €${o.fare}`, '#7de695'));
+    this.orders.on('delivered', (o) =>
+      this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay}${o.tip > 0 ? ` (+€${o.tip} propina!)` : ''}`, '#ffd75e'));
+    this.orders.on('expired', (o) =>
+      this.floatText(o.customer.x, o.customer.y - 48, '¡Pedido perdido!', '#ff5e8b'));
+
+    // pulsing zone rings + floating label
+    this.orderGfx = this.add.graphics().setDepth(14);
+    this.beaconGfx = this.add.graphics().setDepth(18);
+    this.orderLabel = this.add
+      .text(0, 0, '', {
+        fontFamily: 'monospace',
+        fontSize: '15px',
+        color: '#ffd75e',
+        stroke: '#14142b',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5, 1)
+      .setDepth(16);
+    // ----------------------------------------------------------------------
 
     // Debug overlay (H): velocity/heading vectors + live tuning readout.
     this.debugOn = false;
@@ -89,7 +124,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M2 · W acelera · S frena/reversa · A/D virar · H debug · ESC = menú', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M3 · W acelera · S frena · A/D virar · ESPACIO acepta pedido · H debug · ESC = menú', {
         fontFamily: 'monospace',
         fontSize: '18px',
         color: '#ffffff',
@@ -145,6 +180,101 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.shake(70, 0.003);
   }
 
+  /** Filter out places whose tile would collide (defensive against map edits). */
+  pickPassable(list) {
+    return list.filter((p) => {
+      const wall = this.wallLayer.getTileAtWorldXY(p.x, p.y);
+      const ground = this.groundLayer.getTileAtWorldXY(p.x, p.y);
+      const blocked = (wall && wall.properties && wall.properties.collides) ||
+        (ground && ground.properties && ground.properties.collides);
+      if (blocked) {
+        console.warn(`[places] skipped (collider tile): ${p.name || p.note} @ ${p.x},${p.y}`);
+      }
+      return !blocked;
+    });
+  }
+
+  /** Short-lived floating text (popups on order events). */
+  floatText(x, y, msg, color) {
+    const t = this.add
+      .text(x, y, msg, {
+        fontFamily: 'monospace',
+        fontSize: '18px',
+        color,
+        stroke: '#14142b',
+        strokeThickness: 4,
+      })
+      .setOrigin(0.5)
+      .setDepth(60);
+    this.tweens.add({
+      targets: t,
+      y: y - 36,
+      alpha: 0,
+      duration: 1100,
+      ease: 'Sine.easeOut',
+      onComplete: () => t.destroy(),
+    });
+  }
+
+  /** Pulsing pickup/dropoff rings + label + beacon arrow. */
+  drawOrderZones(nowMs) {
+    const g = this.orderGfx;
+    g.clear();
+    const blink = Math.sin(nowMs / 100);
+
+    this.orderLabel.setText('');
+    this.beaconGfx.clear();
+
+    const o = this.orders.order;
+    if (!o) return;
+
+    if (o.state === 'offered') {
+      this.ring(g, o.restaurant, ORDER.pickupRadius, ZONE.offerColor, blink);
+      this.orderLabel
+        .setText(`${o.restaurant.name} · ${o.restaurant.dish}`)
+        .setColor('#ffd75e')
+        .setPosition(o.restaurant.x, o.restaurant.y - 52);
+    } else if (o.state === 'active') {
+      this.ring(g, o.customer, ORDER.dropRadius, ZONE.activeColor, blink);
+      this.orderLabel
+        .setText(`${o.customer.name} · ${Math.ceil(o.timeLeft)}s`)
+        .setColor('#ff8aa4')
+        .setPosition(o.customer.x, o.customer.y - 52);
+    }
+    this.drawBeacon(o.state === 'offered' ? o.restaurant : o.customer, nowMs);
+  }
+
+  ring(g, place, radius, color, blink) {
+    const pulse = 0.55 + 0.45 * Math.sin(blink);
+    g.fillStyle(color, 0.1 + 0.08 * pulse);
+    g.fillCircle(place.x, place.y, radius);
+    g.lineStyle(2.5, color, 0.45 + 0.55 * pulse);
+    g.strokeCircle(place.x, place.y, radius);
+    g.fillStyle(color, 0.95);
+    g.fillCircle(place.x, place.y, 3);
+  }
+
+  /** Hypnotizing arrow bobbing above Glopi, aimed at the current target. */
+  drawBeacon(target, nowMs) {
+    const g = this.beaconGfx;
+    const bike = this.glopi;
+    const bob = Math.sin(nowMs / 1000 * 4) * 3;
+    const bx = bike.x;
+    const by = bike.y - 56 + bob;
+    const ang = Math.atan2(target.y - by, target.x - bx); // aim at the target
+    const cos = Math.cos(ang);
+    const sin = Math.sin(ang);
+    // local coords: forward = +x (tip ahead); rotate into world space by hand
+    const world = (lx, ly) => bx + lx * cos - ly * sin;
+    const worldY = (lx, ly) => by + lx * sin + ly * cos;
+    g.fillStyle(ZONE.beaconColor, 0.95);
+    g.fillTriangle(
+      world(14, 0), worldY(14, 0),
+      world(-10, -9), worldY(-10, -9),
+      world(-10, 9), worldY(-10, 9)
+    );
+  }
+
   drawDebug() {
     const g = this.debugGfx;
     const bike = this.glopi;
@@ -175,7 +305,7 @@ export default class GameScene extends Phaser.Scene {
     );
   }
 
-  update(_t, deltaRaw) {
+  update(timeMs, deltaRaw) {
     const dt = Math.min(deltaRaw, 50) / 1000; // frame-rate independent, capped
     const { W, A, S, D, UP, LEFT, DOWN, RIGHT } = this.keys;
 
@@ -233,5 +363,15 @@ export default class GameScene extends Phaser.Scene {
 
     this.debugVals = { forward, lateral };
     if (this.debugOn) this.drawDebug();
+
+    // ---- orders core loop (M3) ----
+    this.orders.update(dt);
+    if (Phaser.Input.Keyboard.JustDown(this.keys.SPACE)) {
+      this.orders.tryAccept(this.glopi.x, this.glopi.y);
+    }
+    if (this.orders.inDropRange(this.glopi.x, this.glopi.y)) {
+      this.orders.tryDeliver(this.glopi.x, this.glopi.y);
+    }
+    this.drawOrderZones(timeMs);
   }
 }
