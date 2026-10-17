@@ -4,7 +4,7 @@
   "description": "Glopi, a pineapple, delivers for Glovo in Barcelona on a bicycle — Crazy Taxi style, built with Phaser 3.",
   "type": "module",
   "scripts": {
-    "start": "npx --yes serve .",
+    "start": "node tools/serve.mjs 3000",
     "gen": "node tools/gen-tileset.mjs && node tools/gen-landmarks.mjs && node tools/gen-map.mjs",
     "gen:art": "node tools/gen-tileset.mjs && node tools/gen-landmarks.mjs",
     "gen:map": "node tools/gen-map.mjs"

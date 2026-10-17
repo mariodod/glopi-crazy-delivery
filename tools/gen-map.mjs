@@ -76,7 +76,6 @@ for (let by = 0; by < 6; by++) {
 
     if (PLAZAS.some(([px, py]) => px === bx && py === by)) {
       // Plaça: terrazzo across the whole block + props in the middle
-      const isThisPlaza = true;
       for (let y = y0; y < y0 + 4; y++) {
         for (let x = x0; x < x0 + 4; x++) set(ground, x, y, rnd() < 0.3 ? T.PLAZA1 : T.PLAZA0);
       }
@@ -84,7 +83,6 @@ for (let by = 0; by < 6; by++) {
       set(walls, x0 + 2, y0 + 1, T.TREE);
       set(walls, x0 + 1, y0 + 2, T.PALM);
       set(walls, x0 + 2, y0 + 2, T.BENCH);
-      void isThisPlaza;
       continue;
     }
 
@@ -192,7 +190,11 @@ const landmarks = [
   point: { x: true, y: true },
 }));
 
-/* ---------- 10. serialize as a Tiled map with the embedded tileset ---------- */
+/* ---------- 10. serialize as a Tiled map with the embedded tileset ----------
+ * NOTE: Tiled uncompressed data is a FLAT row-major array — not nested rows.
+ */
+
+const flatten = (grid) => grid.flat();
 
 const map = {
   type: 'map',
@@ -211,12 +213,12 @@ const map = {
     {
       id: 1, name: 'Ground', type: 'tilelayer',
       x: 0, y: 0, width: COLS, height: ROWS,
-      opacity: 1, visible: true, data: ground,
+      opacity: 1, visible: true, data: flatten(ground),
     },
     {
       id: 2, name: 'Walls', type: 'tilelayer',
       x: 0, y: 0, width: COLS, height: ROWS,
-      opacity: 1, visible: true, data: walls,
+      opacity: 1, visible: true, data: flatten(walls),
     },
     {
       id: 3, name: 'landmarks', type: 'objectgroup',

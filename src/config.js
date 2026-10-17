@@ -7,17 +7,8 @@
 export const GAME_WIDTH = 960;
 export const GAME_HEIGHT = 640;
 
-/** Extent of the M0 blank test world (real Barcelona tilemap arrives in M1). */
-export const WORLD = {
-  width: 2400,
-  height: 1800,
-};
-
 export const COLORS = {
   night: 0x14142b, // boot / menu background
-  asphalt: 0x3a3a52, // placeholder ground
-  asphaltJoint: 0x454560, // grid joints, only there to perceive motion
-  border: 0xffd75e, // world edge marker (pineapple gold)
 };
 
 export const PLAYER = {
@@ -25,5 +16,6 @@ export const PLAYER = {
   maxSpeed: 280, // px/s
   accel: 0.18, // fraction of the velocity gap closed per frame @60fps (frame-rate dependent for now; real accel+drag tuning in M2)
   turnRate: 0.35, // max radians of rotation per frame toward velocity direction
-  bodyRadius: 14, // arcade physics circle radius (texture is 32x32)
+  bodyW: 24, // slim centered box: tilemap collision doesn't support circle bodies
+  bodyH: 22,
 };

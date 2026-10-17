@@ -92,11 +92,12 @@ glopi-crazy-delivery/
 - [x] Placeholder pineapple texture generated at runtime, WASD/arrow movement with camera follow and world bounds
 - **Exit criteria**: I can move Glopi around a blank canvas from the menu. ✔
 
-### M1 — City that Feels like Barcelona (art pass)
-- [ ] Tiled installed, first city block tileset (road, sidewalk, crosswalk, buildings, plaza, beach)
-- [ ] Barcelona.json map imported with collision layer
-- [ ] Static landmark sprites on top
-- **Exit criteria**: Glopi rides a readable Barcelona grid, can't pass through buildings.
+### M1 — City that Feels like Barcelona (art pass) ✅ done
+- [x] City tileset — **generated programmatically** (25 tiles: asphalt, panot sidewalks, crosswalks, plaza, sand, water, grass, 4 roof palettes, fountain, palm, tree, lamp, bench) by `tools/gen-tileset.mjs` + `tools/gen-landmarks.mjs` on a zero-dep PNG writer. `npm run gen:art`
+- [x] `barcelona.json` — Tiled-format map emitted by `tools/gen-map.mjs` (`npm run gen:map`): 64×48 grid, Eixample streets, pedestrian Rambla, carved Diagonal, boardwalk + sand + two-depth sea, crosswalks, collision tile properties, landmark object layer
+- [x] Landmark sprites (Sagrada Família, Torre Glòries, Arc de Triomf) placed from the Tiled object layer
+- **Exit criteria**: Glopi rides a readable Barcelona grid, can't pass through buildings. ✔ E2E-verified in-browser: map size 2048×1536, collides properties parsed, roof + sea blocking on a rect body, sidewalk gaps passable, 3 landmarks rendered.
+> Note: Tiled GUI never installed — the map is generated deterministic-by-seed in the exact Tiled JSON format, so it can still be opened/edited in Tiled later if needed.
 
 ### M2 — Bike Arcade Physics
 - [ ] Arcade Physics body + custom acceleration/friction curve

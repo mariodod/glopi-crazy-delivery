@@ -1,11 +1,17 @@
 import * as Phaser from 'phaser';
 
-import { COLORS, GAME_WIDTH, GAME_HEIGHT, WORLD, PLAYER } from '../config.js';
+import { GAME_WIDTH, GAME_HEIGHT, PLAYER } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 
+/** Middle of La Rambla (cols 32-33, between street rows 8-9). */
+const SPAWN = { x: 1056, y: 288 };
+
+/** Tiled object name -> frame index in assets/tilesets/landmarks.png. */
+const LANDMARK_FRAME = { sagrada: 0, glories: 1, arc: 2 };
+
 /**
- * M0 gameplay: an empty asphalt world, Glopi, and a camera that
- * follows him while you steer with the keyboard.
+ * M1 gameplay: Glopi rides a real (generated) Barcelona map —
+ * Eixample grid, Rambla, Diagonal, beach — with hard collisions.
  */
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -17,22 +23,21 @@ export default class GameScene extends Phaser.Scene {
       createPlaceholderTextures(this);
     }
 
-    this.drawPlaceholderWorld();
+    this.buildCity();
 
-    this.glopi = this.physics.add.sprite(
-      WORLD.width / 2,
-      WORLD.height / 2,
-      PLAYER.textureKey
-    );
-    this.glopi.setDepth(10);
-    this.glopi.body.setCircle(
-      PLAYER.bodyRadius,
-      16 - PLAYER.bodyRadius,
-      16 - PLAYER.bodyRadius
-    );
+    this.physics.world.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
+
+    this.glopi = this.physics.add.sprite(SPAWN.x, SPAWN.y, PLAYER.textureKey);
+    // Rect body, not circle: Phaser tilemap-vs-body collision does not
+    // support circular bodies, so Glopi rides with a slim centered box.
+    this.glopi.setDepth(20);
+    this.glopi.body.setSize(PLAYER.bodyW, PLAYER.bodyH, true);
     this.glopi.body.setCollideWorldBounds(true);
 
-    this.cameras.main.setBounds(0, 0, WORLD.width, WORLD.height);
+    this.physics.add.collider(this.glopi, this.wallLayer);
+    this.physics.add.collider(this.glopi, this.groundLayer); // water edges
+
+    this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.cameras.main.startFollow(this.glopi, true, 0.08, 0.08);
 
     this.keys = this.input.keyboard.addKeys(
@@ -42,7 +47,7 @@ export default class GameScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-ESC', () => this.scene.start('Menu'));
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M0 ·  WASD / flechas para pedalear · ESC = menú', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M1 · Barcelona —Conduce con WASD / flechas · ESC = menú', {
         fontFamily: 'monospace',
         fontSize: '18px',
         color: '#ffffff',
@@ -53,25 +58,23 @@ export default class GameScene extends Phaser.Scene {
       .setAlpha(0.85);
   }
 
-  drawPlaceholderWorld() {
-    const g = this.add.graphics().setDepth(0);
+  buildCity() {
+    this.map = this.add.tilemap('barcelona');
+    const city = this.map.addTilesetImage('city', 'city');
 
-    g.fillStyle(COLORS.asphalt, 1);
-    g.fillRect(0, 0, WORLD.width, WORLD.height);
+    this.groundLayer = this.map.createLayer('Ground', city).setDepth(0);
+    this.wallLayer = this.map.createLayer('Walls', city).setDepth(5);
 
-    // Faint grid joints so motion is perceivable on a blank canvas.
-    g.lineStyle(1, COLORS.asphaltJoint, 0.6);
-    for (let x = 0; x <= WORLD.width; x += 64) {
-      g.lineBetween(x, 0, x, WORLD.height);
+    this.wallLayer.setCollisionByProperty({ collides: true });
+    this.groundLayer.setCollisionByProperty({ collides: true });
+
+    const frameOf = LANDMARK_FRAME;
+    for (const obj of this.map.getObjectLayer('landmarks')?.objects ?? []) {
+      const frame = frameOf[obj.name];
+      if (frame === undefined) continue;
+      // Decorative doodad; landmark collision zones come with traffic in M4.
+      this.add.image(obj.x, obj.y, 'landmarks', frame).setOrigin(0.5, 1).setDepth(8);
     }
-    for (let y = 0; y <= WORLD.height; y += 64) {
-      g.lineBetween(0, y, WORLD.width, y);
-    }
-
-    g.lineStyle(6, COLORS.border, 0.9);
-    g.strokeRect(3, 3, WORLD.width - 6, WORLD.height - 6);
-
-    this.physics.world.setBounds(0, 0, WORLD.width, WORLD.height);
   }
 
   update() {
@@ -87,9 +90,8 @@ export default class GameScene extends Phaser.Scene {
 
     const body = this.glopi.body;
 
-    // Smooth arcade feel: chase the target velocity instead of snapping,
-    // then rotate the sprite toward the direction of travel with a capped
-    // step so the heading "leans in" instead of snapping instantly.
+    // Smooth arcade feel: chase the target velocity, then rotate toward
+    // the travel direction with a capped step so headings lean in.
     body.velocity.x += (input.x - body.velocity.x) * PLAYER.accel;
     body.velocity.y += (input.y - body.velocity.y) * PLAYER.accel;
 

@@ -13,10 +13,18 @@ Full design document & milestones: [PLAN.md](PLAN.md)
 ## Run (dev)
 
 ```bash
-npx serve .        # or any static file server
+npm start          # static server on http://localhost:3000 (zero-dep, tools/serve.mjs)
 ```
 
-Then open http://localhost:3000
+## Asset pipeline
+
+```bash
+npm run gen        # regenerate city.png, landmarks.png and barcelona.json (deterministic)
+```
+
+The whole pipeline is dependency-free: `tools/gen-*.mjs` write real PNGs and
+Tiled-format JSON with a tiny in-repo PNG encoder, so art and map stay in-sync
+with the game at zero cost.
 
 ## Controls
 
