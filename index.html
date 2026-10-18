@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glopi's Crazy Delivery 🍍</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root {
+      --night: #14142b;
+      --ink: #e9e9f5;
+      --muted: #8f96b3;
+      --accent: #ffd75e;
+      --green: #7de695;
+      --cyan: #66d9e8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0 0 48px;
+      background: var(--night);
+      color: var(--ink);
+      font-family: ui-monospace, 'Cascadia Mono', 'Consolas', monospace;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px; }
+    header { padding: 40px 0 8px; text-align: center; }
+    h1 {
+      margin: 0;
+      font-size: 40px;
+      letter-spacing: 1px;
+      text-shadow: 0 5px 0 rgba(39, 174, 96, 0.55);
+    }
+    .tagline { color: var(--green); margin: 6px 0 0; }
+    .hero {
+      margin: 28px auto 0;
+      border: 2px solid #27ae60;
+      border-radius: 8px;
+      display: block;
+      width: 100%;
+      max-width: 720px;
+      background: #0d0d1f;
+    }
+    .cta-row { text-align: center; margin: 26px 0 8px; }
+    .cta {
+      display: inline-block;
+      padding: 14px 44px;
+      background: var(--accent);
+      color: #14142b;
+      font-weight: 700;
+      font-size: 19px;
+      text-decoration: none;
+      border-radius: 10px;
+      box-shadow: 0 5px 0 #b8912f;
+      transition: transform 0.08s ease;
+    }
+    .cta:hover { transform: translateY(-2px); }
+    .cta:active { transform: translateY(3px); box-shadow: 0 2px 0 #b8912f; }
+    .cta-note { color: var(--muted); font-size: 13px; margin-top: 10px; }
+    h2 {
+      font-size: 22px;
+      color: var(--cyan);
+      margin: 44px 0 12px;
+      letter-spacing: 1px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+    }
+    .grid a { display: block; }
+    .grid img {
+      width: 100%;
+      display: block;
+      border-radius: 6px;
+      border: 1px solid #33345c;
+      transition: border-color 0.15s ease;
+    }
+    .grid a:hover img { border-color: var(--accent); }
+    .caps { font-size: 12px; color: var(--muted); margin: 4px 0 0; }
+    ul { margin: 8px 0; padding-left: 22px; }
+    li { margin: 4px 0; }
+    .foot {
+      margin-top: 44px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+    .foot a { color: var(--cyan); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>GLOPI'S CRAZY DELIVERY 🍍</h1>
+      <p class="tagline">Repartidor de Glovo en Barcelona · ¡a pedalear!</p>
+    </header>
+
+    <img class="hero" src="promo/gameplay.gif" alt="Vídeo gameplay de Glopi's Crazy Delivery" />
+    <div class="cta-row">
+      <a class="cta" href="juego/">▶ JUGAR AHORA</a>
+      <p class="cta-note">ES / CA / EN · Chill, Hora punta o Monzón de pedales · teclado, mando o ratón</p>
+    </div>
+
+    <h2>Capturas</h2>
+    <div class="grid">
+      <a href="promo/shot-ride.png" target="_blank">
+        <img src="promo/shot-ride.png" alt="Paseo a toda velocidad por el Eixample" />
+        <p class="caps">A tope por el Eixample con rachas de viento</p>
+      </a>
+      <a href="promo/shot-pickup.png" target="_blank">
+        <img src="promo/shot-pickup.png" alt="Recogida de un pedido" />
+        <p class="caps">Pedido recogido · ¡RAPIDÍSSIM! tiempo a favor</p>
+      </a>
+      <a href="promo/shot-delivery.png" target="_blank">
+        <img src="promo/shot-delivery.png" alt="Entrega cobrada junto a la Sagrada Família" />
+        <p class="caps">Entrega cobrada a la sombra de la Sagrada Família</p>
+      </a>
+      <a href="promo/shot-results.png" target="_blank">
+        <img src="promo/shot-results.png" alt="Tarjeta de fin de turno con rango B" />
+        <p class="caps">Fin de turno: rango, propinas y récord</p>
+      </a>
+      <a href="promo/shot-menu.png" target="_blank">
+        <img src="promo/shot-menu.png" alt="Menú principal" />
+        <p class="caps">Menú: elige turno e idioma antes de pedalear</p>
+      </a>
+    </div>
+
+    <h2>¿Qué es esto?</h2>
+    <ul>
+      <li>Arcade estilo <i>Crazy Taxi</i>: entregas contrarreloj pedaleando por una Barcelona 2048×1536 con Sagrada Família, Glòries y la Rambla.</li>
+      <li>Cola por calles: coches y patinetes, casi-accidentes misericordiosos, campanilla (<b>MAYÚS</b>) y caos garantizado.</li>
+      <li>Tiendas y clientes bilingües (ES/CA): desde <i>bocata mixto</i> hasta <i>fideuà a la mar</i>.</li>
+      <li>Javascript + Phaser 3.90 vía import map — cero dependencias, cero build.</li>
+    </ul>
+
+    <footer class="foot">
+      Código fuente: <a href="https://github.com/mariodod/glopi-crazy-delivery">github.com/mariodod/glopi-crazy-delivery</a>
+      · hecho con 🍍 y Phaser 3.90
+    </footer>
+  </div>
+</body>
+</html>
