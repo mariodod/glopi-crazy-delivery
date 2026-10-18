@@ -17,6 +17,9 @@ export const T = {
   // Walls & props (row 1). Empty pixels = transparent, ground shows through.
   BUILDING_A: 16, BUILDING_B: 17, BUILDING_C: 18, BUILDING_D: 19,
   FOUNTAIN: 20, PALM: 21, TREE: 22, LAMP: 23, BENCH: 24,
+  // Road markings (row 1, right of the props)
+  DASH_X: 25,      // asphalt + white dashes along X (lane line)
+  DASH_DIAG: 26,   // asphalt + 45° white dash (Av. Diagonal median)
 };
 
 /** Tiles that stop the bike (set as `collides` property in the map JSON).

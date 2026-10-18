@@ -37,6 +37,11 @@ const set = (layer, x, y, t) => {
   if (y < 0 || y >= ROWS || x < 0 || x >= COLS) return;
   layer[y][x] = gid(t);
 };
+/** Truly empty a cell — set() can't (gid of tile index 0 would paint asphalt). */
+const clear = (layer, x, y) => {
+  if (y < 0 || y >= ROWS || x < 0 || x >= COLS) return;
+  layer[y][x] = 0;
+};
 
 /* ---------- 1. base ground: sidewalks in the city, beach below ---------- */
 
@@ -90,7 +95,7 @@ for (let by = 0; by < 6; by++) {
       // Parc: grass interior with tree + palm
       for (let y = y0 + 1; y < y0 + 3; y++) {
         for (let x = x0 + 1; x < x0 + 3; x++) {
-          set(walls, x, y, 0);
+          clear(walls, x, y);
           set(ground, x, y, rnd() < 0.35 ? T.GRASS1 : T.GRASS0);
         }
       }
@@ -121,15 +126,80 @@ for (const [y, x] of [[6, 33], [14, 33], [22, 33], [30, 33], [38, 33]]) set(wall
 for (const [y, x] of [[10, 32], [18, 32], [26, 32], [34, 32]]) set(walls, x, y, T.PALM);
 for (const [y, x] of [[8, 32], [16, 24], [24, 32], [32, 33], [36, 32]]) set(walls, x, y, T.BENCH);
 
-/* ---------- 5. Av. Diagonal: carved anti-diagonal avenue ---------- */
+/* ---------- 5. Av. Diagonal: a proper 3-lane-wide anti-diagonal avenue ---------- */
 
-const diagCol = (r) => Math.round(52 - ((r - 2) * 36) / 37);
-for (let r = 2; r <= 39; r++) {
-  const c = diagCol(r);
-  for (const x of [c, c + 1]) {
+// Center column per row (float), same path as before; the avenue now sweeps
+// a 3-tile swath so no staircase gaps pinch it, with a 45° dashed median.
+const diagCenter = (r) => 52 - ((r - 2) * 36) / 37;
+const touchedBlocks = new Set(); // block keys whose roofs the avenue shears
+
+// Cells at a street meeting need to merge cleanly, and city blocks have
+// roofs only on their inner 2x2 — those are the ones worth registering.
+const inBlockInterior = (x, y) =>
+  x >= 0 && x < COLS && y >= 4 && y < CITY_ROWS &&
+  (x - 4) % 6 >= 1 && (x - 4) % 6 <= 2 &&
+  (y - 4) % 6 >= 1 && (y - 4) % 6 <= 2;
+
+for (let r = 0; r <= 39; r++) {
+  const c = Math.round(diagCenter(r));
+  // 5-tile swath: the 45° staircase edges land two tiles out, so the
+  // avenue reads as one wide boulevard instead of a ragged 3-tile vein
+  for (const x of [c - 2, c - 1, c, c + 1, c + 2]) {
     if (x < 0 || x >= COLS) continue;
-    set(walls, x, r, 0); // clear any roof/palm it slices
-    set(ground, x, r, T.ASPHALT0);
+    if (walls[r][x] !== 0 && inBlockInterior(x, r)) {
+      touchedBlocks.add('b' + Math.floor((x - 4) / 6) + ':' + Math.floor((r - 4) / 6));
+    }
+    clear(walls, x, r); // clear any roof/palm the avenue slices
+    set(ground, x, r, rnd() < 0.35 ? T.ASPHALT1 : T.ASPHALT0);
+  }
+  // 45° dashed median down the swath center — every row so the dashes
+  // chain into a single diagonal line; skip street rows/cols so it never
+  // runs across an intersection
+  const onVStreet = (x) => V_STREETS.some((s) => x === s || x === s + 1);
+  if (!isStreetRow(r) && !onVStreet(c) && c >= 0 && c < COLS) {
+    set(ground, c, r, T.DASH_DIAG);
+  }
+  // roadside lamps frame the avenue every other row (decor, stands on
+  // untouched sidewalk only)
+  if (r % 2 === 0) {
+    for (const x of [c - 3, c + 3]) {
+      if (x < 0 || x >= COLS) continue;
+      if (ground[r][x] === gid(T.SIDEWALK0) && walls[r][x] === 0) {
+        set(walls, x, r, T.LAMP);
+      }
+    }
+  }
+}
+
+/* ---------- 5b. Flanked blocks: sheared roofs become pocket squares ---------- */
+
+for (let by = 0; by < 6; by++) {
+  for (let bx = 0; bx < 10; bx++) {
+    if (!touchedBlocks.has('b' + bx + ':' + by)) continue;
+    if (PLAZAS.some(([px, py]) => px === bx && py === by)) continue;
+    if (PARKS.some(([px, py]) => px === bx && py === by)) continue;
+    const x0 = 4 + 6 * bx;
+    const y0 = 4 + 6 * by;
+    // drop the remaining roof pieces so no block shows a sliver
+    for (let y = y0 + 1; y < y0 + 3; y++) {
+      for (let x = x0 + 1; x < x0 + 3; x++) clear(walls, x, y);
+    }
+    // pocket square: tree/green + bench on the surviving sidewalk ring
+    const spots = [];
+    for (let y = y0; y < y0 + 4; y++) {
+      for (let x = x0; x < x0 + 4; x++) {
+        if (ground[y] && ground[y][x] === gid(T.SIDEWALK0)) spots.push([x, y]);
+      }
+    }
+    if (spots.length) {
+      const i = Math.floor(rnd() * spots.length);
+      set(walls, spots[i][0], spots[i][1], rnd() < 0.6 ? T.TREE : T.PALM);
+      spots.splice(i, 1);
+      if (spots.length) {
+        const j = Math.floor(rnd() * spots.length);
+        set(walls, spots[j][0], spots[j][1], T.BENCH);
+      }
+    }
   }
 }
 

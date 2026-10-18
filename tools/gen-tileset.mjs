@@ -185,14 +185,29 @@ tile((ox, oy) => {   // BENCH (decor)
   can.rect(ox + 19, oy + 25, 2, 4, 0x6f4526);
 });
 
+/* road markings (row 1 continues; asphalt-based, not transparent) */
+
+tile((ox, oy) => {   // DASH_X: dashed white lane line along X
+  asphaltBase(ox, oy, 13, 0x3d4048, 0x45484f);
+  can.rect(ox + 3, oy + 15, 10, 2, 0xece6d2);
+  can.rect(ox + 19, oy + 15, 10, 2, 0xece6d2);
+});
+
+tile((ox, oy) => {   // DASH_DIAG: one 45° dash corner-to-corner; consecutive
+  // tiles along the avenue chain it into a proper dashed median line
+  asphaltBase(ox, oy, 15, 0x3d4048, 0x45484f);
+  can.line(ox + 26, oy + 7, ox + 7, oy + 26, 0xece6d2);
+  can.line(ox + 26, oy + 8, ox + 8, oy + 26, 0xece6d2);
+});
+
 /* remaining row-1 slots stay empty (transparent) */
 
-// 25 tiles defined -> ends at col 9, row 1.
-const DRAWS = 25;
+// 27 tiles defined -> ends at col 11, row 1.
+const DRAWS = 27;
 if (col !== DRAWS % SHEET_COLS || row !== Math.floor(DRAWS / SHEET_COLS)) {
-  throw new Error(`tile layout drifted: col=${col} row=${row}, expected 9/1`);
+  throw new Error(`tile layout drifted: col=${col} row=${row}, expected 11/1`);
 }
 
 mkdirSync(dirname(OUT), { recursive: true });
 can.save(OUT);
-console.log('tileset done: 25 tiles drawn (16 ground + 9 walls/props)');
+console.log('tileset done: 27 tiles drawn (16 ground + 9 walls + 2 markings)');
