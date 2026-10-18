@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, PLAYER } from '../config.js';
 import { DIFFICULTIES, nextDiffKey, storedKey, storeKey } from '../data/difficulties.js';
+import { loadCareer, rankOf } from '../data/career.js';
 import { cycleLang, getLang, t } from '../i18n.js';
 
 /**
@@ -79,6 +80,13 @@ export default class MenuScene extends Phaser.Scene {
     // ---- difficulty tier selector (M7): click or arrows to cycle ----------
     this.diffKey = storedKey();
     const TIER_COLORS = { chill: '#7de695', rush: '#ffd75e', monsoon: '#ff9e42' };
+    // ---- Rider Rank (M8.2): lifetime badge, hidden on fresh profiles -------
+    this.rankText = this.add
+      .text(12, 10, '', {
+        fontFamily: 'monospace',
+        fontSize: '13px',
+        color: '#66d9e8',
+      });
     this.diffText = this.add
       .text(cx, 520, '', {
         fontFamily: 'monospace',
@@ -117,6 +125,9 @@ export default class MenuScene extends Phaser.Scene {
         .setColor(TIER_COLORS[this.diffKey] ?? '#ffffff');
       this.diffDesc.setText(t(tier.descKey));
       this.langText.setText(t('menu.lang', { lang: getLang().toUpperCase() }));
+      const career = loadCareer();
+      this.rankText
+        .setText(career && career.shifts > 0 ? t('menu.rank', { rank: t(rankOf(career.deliveries).key), d: career.deliveries }) : '');
     };
     const cycleDiff = () => {
       this.diffKey = nextDiffKey(this.diffKey, 1);

@@ -18,6 +18,7 @@ const DICTIONARIES = {
     'menu.turno': 'TURNO:',
     'menu.lang': 'Idioma: {lang}',
     'menu.langHint': 'L · IDIOMA',
+    'menu.rank': 'RANGO: {rank} · {d} entregas',
     // difficulty tiers
     'tier.calmado': 'CALMADO',
     'tier.calmado.desc': 'Cielo despejado',
@@ -65,6 +66,15 @@ const DICTIONARIES = {
     'res.newRecord': '  ¡NUEVO RÉCORD!',
     'res.firstSave': 'primer turno guardado',
     'res.again': 'Pulsa ESPACIO para otra ronda',
+    // rider rank (M8.2)
+    'rank.novato': 'NOVATO',
+    'rank.junior': 'JUNIOR',
+    'rank.senior': 'SENIOR',
+    'rank.experto': 'EXPERTO',
+    'rank.guru': 'GURÚ GLOPI',
+    'rank.leyenda': 'LEYENDA GLOPI',
+    'res.career': 'CARRERA: {rank} · {d} entregas totales',
+    'res.rankUp': '¡SUBISTE A RANGO {rank}!',
   },
   ca: {
     // menu
@@ -73,6 +83,7 @@ const DICTIONARIES = {
     'menu.turno': 'TORN:',
     'menu.lang': 'Idioma: {lang}',
     'menu.langHint': 'L · IDIOMA',
+    'menu.rank': 'RANG: {rank} · {d} comandes',
     // difficulty tiers
     'tier.calmado': 'TRANQUIL',
     'tier.calmado.desc': 'Cel serè',
@@ -120,6 +131,15 @@ const DICTIONARIES = {
     'res.newRecord': '  RÈCORD NOU!',
     'res.firstSave': 'primer torn guardat',
     'res.again': 'Prem ESPAI per una altra ronda',
+    // rider rank (M8.2)
+    'rank.novato': 'NOVELL',
+    'rank.junior': 'JÚNIOR',
+    'rank.senior': 'SÈNIOR',
+    'rank.experto': 'EXPERT',
+    'rank.guru': 'GURÚ GLOPI',
+    'rank.leyenda': 'LLEGENDA GLOPI',
+    'res.career': 'CARRERA: {rank} · {d} comandes totals',
+    'res.rankUp': 'HAS PUJAT A RANG {rank}!',
   },
   en: {
     // menu
@@ -128,6 +148,7 @@ const DICTIONARIES = {
     'menu.turno': 'SHIFT:',
     'menu.lang': 'Language: {lang}',
     'menu.langHint': 'L · LANGUAGE',
+    'menu.rank': 'RANK: {rank} · {d} deliveries',
     // difficulty tiers
     'tier.calmado': 'CHILL',
     'tier.calmado.desc': 'Clear skies',
@@ -175,6 +196,15 @@ const DICTIONARIES = {
     'res.newRecord': '  NEW RECORD!',
     'res.firstSave': 'first turn saved',
     'res.again': 'Press SPACE for another shift',
+    // rider rank (M8.2)
+    'rank.novato': 'ROOKIE',
+    'rank.junior': 'JUNIOR',
+    'rank.senior': 'SENIOR',
+    'rank.experto': 'EXPERT',
+    'rank.guru': 'GLOPI GURU',
+    'rank.leyenda': 'GLOPI LEGEND',
+    'res.career': 'CAREER: {rank} · {d} total deliveries',
+    'res.rankUp': 'PROMOTED TO RANK {rank}!',
   },
 };
 

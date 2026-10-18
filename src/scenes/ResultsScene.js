@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
 import { t } from '../i18n.js';
+import { bumpCareer, rankOf } from '../data/career.js';
 
 const MONO = { fontFamily: 'monospace' };
 
@@ -81,6 +82,19 @@ export default class ResultsScene extends Phaser.Scene {
       : t('res.firstSave');
     this.add
       .text(cx, 430, bestLine, { ...MONO, fontSize: '15px', color: best.isNew ? '#ffd75e' : '#8f96b3' })
+      .setOrigin(0.5, 0);
+
+    // Rider Rank (M8.2): fold the shift into the lifetime career; a tier
+    // crossing gets the gold celebration line, the steady state stays cyan.
+    const { prev: careerPrev, career } = bumpCareer(data);
+    const rank = rankOf(career.deliveries);
+    const rankedUp = rankOf(careerPrev.deliveries).key !== rank.key;
+    this.add
+      .text(
+        cx, 458,
+        rankedUp ? t('res.rankUp', { rank: t(rank.key) }) : t('res.career', { rank: t(rank.key), d: career.deliveries }),
+        { ...MONO, fontSize: '15px', color: rankedUp ? '#ffd75e' : '#66d9e8' }
+      )
       .setOrigin(0.5, 0);
 
     this.add
