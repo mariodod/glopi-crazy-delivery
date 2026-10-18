@@ -71,7 +71,7 @@ export default class MenuScene extends Phaser.Scene {
     });
 
     this.add
-      .text(12, GAME_HEIGHT - 26, 'v0.1.0 · M0 · Phaser 3.90', {
+      .text(12, GAME_HEIGHT - 26, 'v1.1 · M8 · Phaser 3.90', {
         fontFamily: 'monospace',
         fontSize: '14px',
         color: '#8d8daa',
