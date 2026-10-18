@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
 import { tipTier } from '../systems/OrderSystem.js';
+import { t } from '../i18n.js';
 
 const MONO = { fontFamily: 'monospace' };
 
@@ -51,34 +52,36 @@ export default class HUDScene extends Phaser.Scene {
     const score = game && game.score;
     if (!sys || !score) return;
     this.barGfx.clear();
+    const deliveries = sys.totalDelivered;
     this.statsText.setText(
-      `€${Math.round(score.money)} · ${sys.totalDelivered} entrega${sys.totalDelivered === 1 ? '' : 's'}` +
-      (score.bestStreak > 1 ? ` · racha x${score.bestStreak}` : '')
+      `€${Math.round(score.money)} · ${deliveries} ${deliveries === 1 ? t('hud.delivery1') : t('hud.deliveryN')}` +
+      (score.bestStreak > 1 ? ` · ${t('hud.streak', { n: score.bestStreak })}` : '')
     );
 
     const secs = Math.max(0, Math.ceil(score.shiftLeft));
+    const clock = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
     this.shiftText
-      .setText(`TURNO ${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`)
+      .setText(t('hud.turno', { t: clock }))
       .setColor(secs <= 20 ? '#ff5e8b' : '#e9e9f5');
 
     const o = sys.order;
     if (!o) {
-      this.tagText.setText('ESPERA').setColor('#9aa0ff');
-      this.nameText.setText('Sigue las flechas…');
-      this.subText.setText('nuevo pedido en camino');
+      this.tagText.setText(t('hud.waitTag')).setColor('#9aa0ff');
+      this.nameText.setText(t('hud.waitName'));
+      this.subText.setText(t('hud.waitSub'));
       this.fareText.setText('');
       return;
     }
 
     if (o.state === 'offered') {
-      this.tagText.setText('RECOGER · FRENA EN EL CÍRCULO').setColor('#ffd75e');
+      this.tagText.setText(t('hud.pickTag')).setColor('#ffd75e');
       this.nameText.setText(o.restaurant.name);
       this.subText.setText(o.restaurant.dish);
       this.fareText.setText(`€${o.fare} · ${Math.round(o.routePx / 32)}m`);
     } else {
       const frac = Phaser.Math.Clamp(o.timeLeft / o.timeTotal, 0, 1);
       const tier = tipTier(frac);
-      this.tagText.setText('ENTREGA · ' + tier.word).setColor(tier.color);
+      this.tagText.setText(t('hud.deliverTag', { word: tier.word })).setColor(tier.color);
       this.nameText.setText(o.customer.name);
       this.subText.setText(o.customer.note);
       this.fareText.setText(`€${o.fare} · ${this.playerMeters(o.customer)}m`);

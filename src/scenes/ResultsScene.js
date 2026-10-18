@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
+import { t } from '../i18n.js';
 
 const MONO = { fontFamily: 'monospace' };
 
@@ -47,7 +48,7 @@ export default class ResultsScene extends Phaser.Scene {
     const cx = GAME_WIDTH / 2;
     this.add.rectangle(cx, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x14142b, 0.8);
     this.add
-      .text(cx, 96, 'SE TERMINÓ EL TURNO', { ...MONO, fontSize: '34px', color: '#ffffff' })
+      .text(cx, 96, t('res.title'), { ...MONO, fontSize: '34px', color: '#ffffff' })
       .setOrigin(0.5, 0);
 
     const color = GRADE_COLOR[data.grade] ?? '#9aa4ad';
@@ -55,14 +56,14 @@ export default class ResultsScene extends Phaser.Scene {
       .text(cx - 250, 180, data.grade, { ...MONO, fontSize: '170px', color })
       .setOrigin(0.5, 0);
     this.add
-      .text(cx - 250, 372, 'RANGO', { ...MONO, fontSize: '16px', color: '#8f96b3' })
+      .text(cx - 250, 372, t('res.rank'), { ...MONO, fontSize: '16px', color: '#8f96b3' })
       .setOrigin(0.5, 0);
 
     const rows = [
-      `EUR ${Math.round(data.money)}`,
-      `${data.deliveries} entregas`,
-      `mejor racha x${data.bestStreak}`,
-      `${data.nearMisses} casi-accidentes`,
+      t('res.money', { n: Math.round(data.money) }),
+      t('res.deliveries', { n: data.deliveries }),
+      t('res.streak', { n: data.bestStreak }),
+      t('res.nearMiss', { n: data.nearMisses }),
     ];
     this.add
       .text(cx + 60, 196, rows.join('\n'), { ...MONO, fontSize: '22px', color: '#e9e9f5', align: 'left', lineSpacing: 10 })
@@ -75,14 +76,15 @@ export default class ResultsScene extends Phaser.Scene {
       bestStreak: data.bestStreak,
     });
     const bestLine = best.prev
-      ? `mejor turno: €${Math.round(best.prev.money)} · ${best.prev.deliveries} entregas${best.isNew ? '  ¡NUEVO RÉCORD!' : ''}`
-      : 'primer turno guardado';
+      ? t('res.best', { m: Math.round(best.prev.money), d: best.prev.deliveries }) +
+        (best.isNew ? t('res.newRecord') : '')
+      : t('res.firstSave');
     this.add
       .text(cx, 430, bestLine, { ...MONO, fontSize: '15px', color: best.isNew ? '#ffd75e' : '#8f96b3' })
       .setOrigin(0.5, 0);
 
     this.add
-      .text(cx, GAME_HEIGHT - 70, 'Pulsa ESPACIO para otra ronda', {
+      .text(cx, GAME_HEIGHT - 70, t('res.again'), {
         ...MONO, fontSize: '17px', color: '#ffd75e',
       })
       .setOrigin(0.5, 0);

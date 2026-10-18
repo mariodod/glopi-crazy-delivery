@@ -6,6 +6,7 @@
  * Events:         'spawned', 'accepted', 'delivered', 'expired'
  *                 (each emits the order object as payload)
  */
+import { t } from '../i18n.js';
 /**
  * Crazy-Taxi-style tip tiers: how much delivery time is left decides the
  * tip multiplier. Used by OrderSystem (money math) and the HUD (colors).
@@ -15,14 +16,16 @@
  *   RED    < 12%  — 10% tip
  */
 export const TIERS = [
-  { key: 'GREEN', at: 0.55, mult: 1.0, word: '¡RÁPIDO!', color: '#7de695' },
-  { key: 'YELLOW', at: 0.30, mult: 0.6, word: 'BIEN', color: '#ffd75e' },
-  { key: 'ORANGE', at: 0.12, mult: 0.3, word: 'TARDE', color: '#ff9e42' },
-  { key: 'RED', at: 0, mult: 0.1, word: 'LENTO', color: '#ff5e8b' },
+  { key: 'GREEN', at: 0.55, mult: 1.0, wordKey: 'tier.word.fast', color: '#7de695' },
+  { key: 'YELLOW', at: 0.30, mult: 0.6, wordKey: 'tier.word.ok', color: '#ffd75e' },
+  { key: 'ORANGE', at: 0.12, mult: 0.3, wordKey: 'tier.word.late', color: '#ff9e42' },
+  { key: 'RED', at: 0, mult: 0.1, wordKey: 'tier.word.slow', color: '#ff5e8b' },
 ];
 
+/** Resolve the tier for a time fraction, word pre-translated (M7.2). */
 export function tipTier(frac) {
-  return TIERS.find((t) => frac >= t.at) ?? TIERS[TIERS.length - 1];
+  const tier = TIERS.find((tr) => frac >= tr.at) ?? TIERS[TIERS.length - 1];
+  return { ...tier, word: t(tier.wordKey) };
 }
 
 export class OrderSystem {

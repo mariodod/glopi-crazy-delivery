@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, PLAYER } from '../config.js';
 import { DIFFICULTIES, nextDiffKey, storedKey, storeKey } from '../data/difficulties.js';
+import { cycleLang, getLang, t } from '../i18n.js';
 
 /**
  * Title screen: game logo, bouncing Glopi and the prompt to start.
@@ -44,23 +45,23 @@ export default class MenuScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    this.add
-      .text(cx, 396, 'Repartidor de Glovo en Barcelona · ¡a pedalear!', {
+    this.subtitle = this.add
+      .text(cx, 396, t('menu.subtitle'), {
         fontFamily: 'monospace',
         fontSize: '20px',
         color: '#27ae60',
       })
       .setOrigin(0.5);
 
-    const prompt = this.add
-      .text(cx, 452, 'Pulsa ESPACIO para empezar', {
+    this.prompt = this.add
+      .text(cx, 452, t('menu.prompt'), {
         fontFamily: 'monospace',
         fontSize: '24px',
         color: '#ffffff',
       })
       .setOrigin(0.5);
     this.tweens.add({
-      targets: prompt,
+      targets: this.prompt,
       alpha: 0.25,
       duration: 700,
       yoyo: true,
@@ -78,7 +79,6 @@ export default class MenuScene extends Phaser.Scene {
     // ---- difficulty tier selector (M7): click or arrows to cycle ----------
     this.diffKey = storedKey();
     const TIER_COLORS = { chill: '#7de695', rush: '#ffd75e', monsoon: '#ff9e42' };
-    const tier = () => DIFFICULTIES[this.diffKey];
     this.diffText = this.add
       .text(cx, 520, '', {
         fontFamily: 'monospace',
@@ -93,36 +93,69 @@ export default class MenuScene extends Phaser.Scene {
         color: '#8d8daa',
       })
       .setOrigin(0.5);
-    const refreshDiff = () => {
+    this.langText = this.add
+      .text(GAME_WIDTH - 12, 12, '', {
+        fontFamily: 'monospace',
+        fontSize: '15px',
+        color: '#66d9e8',
+      })
+      .setOrigin(1, 0);
+    this.langHint = this.add
+      .text(GAME_WIDTH - 12, 32, t('menu.langHint'), {
+        fontFamily: 'monospace',
+        fontSize: '11px',
+        color: '#5b5b78',
+      })
+      .setOrigin(1, 0);
+
+    const refreshMenuTexts = () => {
+      const tier = DIFFICULTIES[this.diffKey];
+      this.subtitle.setText(t('menu.subtitle'));
+      this.prompt.setText(t('menu.prompt'));
       this.diffText
-        .setText(`◀ TURNO: ${tier().label} ▶`)
+        .setText(`◀ ${t('menu.turno')} ${t(tier.labelKey)} ▶`)
         .setColor(TIER_COLORS[this.diffKey] ?? '#ffffff');
-      this.diffDesc.setText(tier().desc);
+      this.diffDesc.setText(t(tier.descKey));
+      this.langText.setText(t('menu.lang', { lang: getLang().toUpperCase() }));
     };
     const cycleDiff = () => {
       this.diffKey = nextDiffKey(this.diffKey, 1);
       storeKey(this.diffKey);
-      this.diffClickedAt = performance.now(); // guard the start-on-click binding
-      refreshDiff();
+      refreshMenuTexts();
     };
-    refreshDiff();
+    const pointerCycle = (cycle) => {
+      this.diffClickedAt = performance.now(); // block the start-on-click binding
+      cycle();
+    };
+    const cycleLangUi = () => {
+      cycleLang();
+      refreshMenuTexts();
+    };
+    refreshMenuTexts();
     this.diffText.setInteractive({ useHandCursor: true });
     this.diffText.on('pointerdown', (_pointer, _x, _y, event) => {
       event.stopPropagation(); // cycle the tier; don't start the shift
-      cycleDiff();
+      pointerCycle(cycleDiff);
+    });
+    this.langText.setInteractive({ useHandCursor: true });
+    this.langText.on('pointerdown', (_pointer, _x, _y, event) => {
+      event.stopPropagation();
+      pointerCycle(cycleLangUi);
     });
     this.input.keyboard.on('keydown-LEFT', cycleDiff);
     this.input.keyboard.on('keydown-RIGHT', cycleDiff);
+    this.input.keyboard.on('keydown-L', cycleLangUi);
 
+    const launch = () => this.scene.start('Game', { difficulty: this.diffKey });
     const start = () => {
-      // a click within the last 300ms was the tier row cycling, not a start
+      // a click within the last 300ms was the tier/lang row cycling, not a start
       if (performance.now() - (this.diffClickedAt || 0) < 300) return;
-      this.scene.start('Game', { difficulty: this.diffKey });
+      launch();
     };
-    this.input.keyboard.once('keydown-SPACE', start);
-    this.input.keyboard.once('keydown-ENTER', start);
+    this.input.keyboard.once('keydown-SPACE', launch);
+    this.input.keyboard.once('keydown-ENTER', launch);
     this.input.once('pointerdown', start);
     // any gamepad button starts too (M6.4)
-    if (this.input.gamepad) this.input.gamepad.once('gamepadbuttondown', start);
+    if (this.input.gamepad) this.input.gamepad.once('gamepadbuttondown', launch);
   }
 }

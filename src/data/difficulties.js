@@ -7,12 +7,13 @@
  * (higher = friendlier timings). Default is 'rush' = the M3-M6 tuning.
  */
 import { TRAFFIC, PEDS, ORDER } from '../config.js';
+import { t } from '../i18n.js';
 
 export const DIFFICULTIES = {
   chill: {
     key: 'chill',
-    label: 'CALMADO',
-    desc: 'Cielo despejado',
+    labelKey: 'tier.calmado',
+    descKey: 'tier.calmado.desc',
     traffic: {
       carCount: 6,
       scooterCount: 3,
@@ -24,8 +25,8 @@ export const DIFFICULTIES = {
   },
   rush: {
     key: 'rush',
-    label: 'HORA PUNTA',
-    desc: 'La calle aprieta',
+    labelKey: 'tier.rush',
+    descKey: 'tier.rush.desc',
     traffic: {
       carCount: TRAFFIC.carCount,
       scooterCount: TRAFFIC.scooterCount,
@@ -37,8 +38,8 @@ export const DIFFICULTIES = {
   },
   monsoon: {
     key: 'monsoon',
-    label: 'MONZÓN DE PEDALES',
-    desc: 'Caos total',
+    labelKey: 'tier.monsoon',
+    descKey: 'tier.monsoon.desc',
     traffic: {
       carCount: 12,
       scooterCount: 7,

@@ -8,6 +8,7 @@ import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
 import { applyDifficulty, resolveDifficulty } from '../data/difficulties.js';
+import { t } from '../i18n.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
@@ -130,23 +131,23 @@ export default class GameScene extends Phaser.Scene {
       config: this.diffBlocks.order,
     });
     this.orders.on('spawned', (o) =>
-      this.floatText(o.restaurant.x, o.restaurant.y - 48, '¡NUEVO PEDIDO!', '#ffd75e'));
+      this.floatText(o.restaurant.x, o.restaurant.y - 48, t('pop.newOrder'), '#ffd75e'));
     this.orders.on('accepted', (o) => {
-      this.floatText(o.restaurant.x, o.restaurant.y - 48, `¡Recogido! €${o.fare}`, '#7de695');
+      this.floatText(o.restaurant.x, o.restaurant.y - 48, t('pop.picked', { n: o.fare }), '#7de695');
       this.playSfx('sfx-blip');
     });
     this.orders.on('delivered', (o) => {
       // full pay + crazy-taxi-grade word: `+€132 · ¡RÁPIDO!`, tier-colored
       this.floatText(
         o.customer.x, o.customer.y - 48,
-        `+€${o.pay} · ${o.tier.word}`, o.tier.color,
+        t('pop.pay', { n: o.pay, word: o.tier.word }), o.tier.color,
         { size: 23 } // the payday gets the biggest pop
       );
       this.score.deliver(o.pay);
       this.playSfx('sfx-coin');
     });
     this.orders.on('expired', (o) => {
-      this.floatText(o.customer.x, o.customer.y - 48, '¡Pedido perdido!', '#ff5e8b');
+      this.floatText(o.customer.x, o.customer.y - 48, t('pop.lost'), '#ff5e8b');
       this.playSfx('sfx-fail');
     });
 
@@ -158,13 +159,13 @@ export default class GameScene extends Phaser.Scene {
     this.dwellDrop = 0; // stationary time inside the customer ring
     this.dwellVisual = null;
     this.traffic.on('bumped', (p) =>
-      this.floatText(p.x, p.y - 20, '¡AY!', '#9aa4ad'));
+      this.floatText(p.x, p.y - 20, t('pop.bump'), '#9aa4ad'));
     // near-miss bonus: weave close past a car at speed and get paid for it —
     // chains build a streak multiplier (x1 → x1.5 → x2 …)
     this.traffic.on('nearmiss', (p) => {
       const amount = this.score.nearMiss(TRAFFIC.nearMissReward);
       const x = amount > TRAFFIC.nearMissReward ? ` · x${this.score.streak}!!` : '';
-      this.floatText(p.x, p.y - 30, `¡CASI! +€${amount}${x}`, '#ffd75e');
+      this.floatText(p.x, p.y - 30, t('pop.near', { n: amount, streak: x }), '#ffd75e');
       this.playSfx('sfx-coin');
     });
 
@@ -239,7 +240,7 @@ export default class GameScene extends Phaser.Scene {
     });
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, 'M4 · W acelera · S frena · A/D virar · frena en el círculo para recoger/entregar · MAYÚS campana · H debug · ESC = menú', {
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, t('hud.hint'), {
         fontFamily: 'monospace',
         fontSize: '18px',
         color: '#ffffff',
@@ -608,9 +609,9 @@ export default class GameScene extends Phaser.Scene {
     this.ragdollUntil = now + JUICE.ragdollDur * 1000;
     this.dazeUntil = now + JUICE.dazeTime * 1000;
     if (paid > 0) {
-      this.floatText(carSprite.x, carSprite.y - 34, `−€${paid} ¡AY!`, '#ff5e8b');
+      this.floatText(carSprite.x, carSprite.y - 34, t('pop.cashLose', { n: paid }), '#ff5e8b');
     } else {
-      this.floatText(carSprite.x, carSprite.y - 34, '¡AY!', '#ff5e8b');
+      this.floatText(carSprite.x, carSprite.y - 34, t('pop.bump'), '#ff5e8b');
     }
 
     this.sparks.explode(6, this.glopi.x, this.glopi.y);
@@ -760,7 +761,7 @@ export default class GameScene extends Phaser.Scene {
       const scattered = this.traffic.bell(this.glopi.x, this.glopi.y);
       this.playSfx('sfx-bell');
       if (scattered > 0) {
-        this.floatText(this.glopi.x, this.glopi.y - 46, '¡DING!', '#ffd75e');
+        this.floatText(this.glopi.x, this.glopi.y - 46, t('pop.ding'), '#ffd75e');
       }
     }
 
