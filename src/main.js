@@ -16,6 +16,9 @@ const config = {
   height: GAME_HEIGHT,
   pixelArt: true,
   roundPixels: true,
+  input: {
+    gamepad: true,
+  },
   backgroundColor: '#' + COLORS.night.toString(16).padStart(6, '0'),
   physics: {
     default: 'arcade',

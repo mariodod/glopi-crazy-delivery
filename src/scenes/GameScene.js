@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS, SCORE, JUICE, MUSIC,
+  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD,
 } from '../config.js';
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
@@ -74,6 +74,7 @@ export default class GameScene extends Phaser.Scene {
     this.hopCd = 0; // s until the next hop may fire
     this.ragdollUntil = 0; // ms timestamp: tumble window end
     this.dazeUntil = 0; // ms timestamp: input blackout end
+    this.padBellWas = false; // pad bell button previous state (edge detect)
     this.speedRef = 0; // speed sampled JUICE window ago
     this.speedRefTimer = 0;
     this.juiceState = { frac: 0, marks: 0, hop: 0 }; // debuggable snapshot
@@ -468,6 +469,27 @@ export default class GameScene extends Phaser.Scene {
     this.music.chaos.setVolume(eV + ((hot ? MUSIC.chaosOn : MUSIC.chaosOff) - eV) * k);
   }
 
+  /**
+   * First connected gamepad translated to simple intent (M6.4): stick
+   * steering with a deadzone, pedal/brake buttons, bell button state.
+   * Returns null when no pad — keyboard keeps working untouched.
+   */
+  readGamepad() {
+    const gp = this.input.gamepad;
+    if (!gp || !gp.enabled) return null;
+    const pad = gp.getPad ? gp.getPad(0) : null;
+    if (!pad || !pad.connected) return null;
+    const ax = pad.axes.length > GAMEPAD.steerAxis
+      ? pad.axes[GAMEPAD.steerAxis].getValue() || 0
+      : 0;
+    return {
+      steer: Math.abs(ax) > GAMEPAD.steerDead ? Phaser.Math.Clamp(ax, -1, 1) : 0,
+      pedal: !!(pad.buttons[GAMEPAD.pedalBtn] && pad.buttons[GAMEPAD.pedalBtn].pressed),
+      brake: !!(pad.buttons[GAMEPAD.brakeBtn] && pad.buttons[GAMEPAD.brakeBtn].pressed),
+      bell: !!(pad.buttons[GAMEPAD.bellBtn] && pad.buttons[GAMEPAD.bellBtn].pressed),
+    };
+  }
+
   /** Audio is optional: autoplay policies can lock the context in probes. */
   playSfx(key) {
     try {
@@ -624,9 +646,15 @@ export default class GameScene extends Phaser.Scene {
     // shift is over (or Glopi is dazed from a crash): hands off the
     // handlebars, the bike coasts to a stop while the world keeps rolling
     const blockInput = this.shiftOver === true || this.time.now < this.dazeUntil;
-    const steer = blockInput ? 0 : (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
-    const pedaling = !blockInput && (W.isDown || UP.isDown);
-    const braking = !blockInput && (S.isDown || DOWN.isDown);
+    const gp = this.readGamepad();
+    const bellRising = !!gp && gp.bell && !this.padBellWas; // pad trigger edge
+    this.padBellWas = !!gp && gp.bell;
+
+    // keyboard wins when pressed; otherwise the pad's stick/buttons drive
+    const steerKeys = (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
+    const steer = blockInput ? 0 : (steerKeys !== 0 ? steerKeys : (gp ? gp.steer : 0));
+    const pedaling = !blockInput && ((W.isDown || UP.isDown) || (gp && gp.pedal));
+    const braking = !blockInput && ((S.isDown || DOWN.isDown) || (gp && gp.brake));
 
     const V = VEHICLE;
 
@@ -718,8 +746,10 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // bike bell (SHIFT): scatter nearby pedestrians
-    if (Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)) {
+    // bike bell (SHIFT or pad X): scatter nearby pedestrians
+    if (
+      Phaser.Input.Keyboard.JustDown(this.keys.SHIFT) || bellRising
+    ) {
       const scattered = this.traffic.bell(this.glopi.x, this.glopi.y);
       this.playSfx('sfx-bell');
       if (scattered > 0) {

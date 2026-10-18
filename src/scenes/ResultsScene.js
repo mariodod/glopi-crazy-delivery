@@ -92,5 +92,13 @@ export default class ResultsScene extends Phaser.Scene {
       this.scene.stop('HUD');
       this.scene.start('Game'); // starting another scene stops this one
     });
+    // any gamepad button restarts too (M6.4)
+    if (this.input.gamepad) {
+      this.input.gamepad.once('gamepadbuttondown', () => {
+        this.scene.stop('Game');
+        this.scene.stop('HUD');
+        this.scene.start('Game');
+      });
+    }
   }
 }

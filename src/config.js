@@ -138,6 +138,18 @@ export const MUSIC = {
 };
 
 /**
+ * M6.4 gamepad mapping: left-stick steering, face-button drive.
+ * (A pedals, B brakes, X rings the bell — plus keyboard parity.)
+ */
+export const GAMEPAD = {
+  steerAxis: 0, // left stick X axis
+  steerDead: 0.14, // deadzone: micro-jitter ignored
+  pedalBtn: 0, // A / Cross
+  brakeBtn: 1, // B / Circle
+  bellBtn: 2, // X / Square
+};
+
+/**
  * Scoring (M5). One wallet for the whole shift: near-miss bonuses chain
  * into a streak multiplier, delivery pay lands here, crash penalties burn.
  * `shiftLength` drives the 3-minute shift; grade thresholds rank the run.

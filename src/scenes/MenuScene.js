@@ -78,5 +78,7 @@ export default class MenuScene extends Phaser.Scene {
     this.input.keyboard.once('keydown-SPACE', start);
     this.input.keyboard.once('keydown-ENTER', start);
     this.input.once('pointerdown', start);
+    // any gamepad button starts too (M6.4)
+    if (this.input.gamepad) this.input.gamepad.once('gamepadbuttondown', start);
   }
 }
