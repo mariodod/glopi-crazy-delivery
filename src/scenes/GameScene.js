@@ -52,6 +52,7 @@ export default class GameScene extends Phaser.Scene {
     this.heading = SPAWN.heading;
     this.vel = new Phaser.Math.Vector2(0, 0);
     this.lastImpact = -1;
+    this.shiftOver = false;
 
     this.physics.add.collider(this.glopi, this.wallLayer, this.onWallHit, null, this);
     this.physics.add.collider(this.glopi, this.groundLayer, this.onWallHit, null, this); // sea edges
@@ -121,6 +122,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.input.keyboard.once('keydown-ESC', () => {
       this.scene.stop('HUD'); // overlay scene (M3.3); no-op if not running
+      this.scene.stop('Results'); // in case ESC lands on the results card
       this.scene.start('Menu');
     });
 
@@ -600,6 +602,7 @@ export default class GameScene extends Phaser.Scene {
 
   /** Shift's up: no more orders, the results card takes over the screen. */
   endShift(snapshot) {
+    this.shiftOver = true; // hands off + stops the offer spawner in update()
     this.orders.reset(); // clears zones, HUD card and the beacon
     this.dwellVisual = null;
     this.dwellPickup = 0;
