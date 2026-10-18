@@ -2,6 +2,8 @@ import * as Phaser from 'phaser';
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
 import { tipTier } from '../systems/OrderSystem.js';
+import { TouchControls } from '../systems/TouchControls.js';
+import { applySoundMute, isMuted, setMuted, toggleFullscreen } from '../data/settings.js';
 import { t } from '../i18n.js';
 
 const MONO = { fontFamily: 'monospace' };
@@ -44,6 +46,77 @@ export default class HUDScene extends Phaser.Scene {
     // collision with the world-space debug overlay (game draws it at the same corner)
     const game = this.scene.get('Game');
     if (game && game.debugText) game.debugText.setPosition(8, GAME_HEIGHT - 112);
+
+    // ---- M8.3 system buttons: sound + fullscreen (top-right) ------------
+    this.muteText = this.add
+      .text(GAME_WIDTH - 12, 36, isMuted() ? '🔇' : '🔊', { ...MONO, fontSize: '16px', color: '#66d9e8' })
+      .setOrigin(1, 0);
+    this.muteText.setInteractive({ useHandCursor: true });
+    this.muteText.on('pointerdown', (_p, _x, _y, event) => {
+      event.stopPropagation();
+      setMuted(!isMuted());
+      applySoundMute(this.game);
+      this.muteText.setText(isMuted() ? '🔇' : '🔊');
+    });
+    this.fsText = this.add
+      .text(GAME_WIDTH - 52, 36, '⛶', { ...MONO, fontSize: '16px', color: '#66d9e8' })
+      .setOrigin(1, 0);
+    this.fsText.setInteractive({ useHandCursor: true });
+    this.fsText.on('pointerdown', (_p, _x, _y, event) => {
+      event.stopPropagation();
+      toggleFullscreen(this.game);
+    });
+
+    // ---- M8.3 touch zones (bottom edges), hidden until a touch is seen --
+    this.touch = game ? game.touch : null;
+    this.syncTouchUI = () => {};
+    if (this.touch) {
+      this.touchOn = window.matchMedia
+        ? window.matchMedia('(pointer: coarse)').matches
+        : false;
+      this.touchGfx = this.add.graphics().setDepth(2);
+      this.touchBtns = this.touch.zones.map((z) => {
+        const big = z.key === 'left' || z.key === 'right';
+        const label = big
+          ? z.key === 'left' ? '◀' : '▶'
+          : z.key === 'pedal' ? t('ui.pedal') : t('ui.brake');
+        return this.add
+          .text(z.x + z.w / 2, z.y + z.h / 2, label, {
+            ...MONO, fontSize: big ? '34px' : '17px', color: '#c8d8e8',
+          })
+          .setOrigin(0.5)
+          .setDepth(2)
+          .setVisible(this.touchOn);
+      });
+      this.syncTouchUI = () => {
+        const on = this.touchOn;
+        this.touchGfx.clear();
+        for (const zone of this.touch.zones) {
+          if (!on) break;
+          this.touchGfx
+            .fillStyle(0x66d9e8, 0.09)
+            .lineStyle(2, 0x66d9e8, 0.28);
+          this.touchGfx.fillRoundedRect(zone.x, zone.y, zone.w, zone.h, 14);
+          this.touchGfx.strokeRoundedRect(zone.x, zone.y, zone.w, zone.h, 14);
+        }
+        for (const btn of this.touchBtns) btn.setVisible(on);
+      };
+      this.onFirstTouch = (p) => {
+        if (!this.touchOn && p && p.wasTouch) this.setTouchOn(true);
+      };
+      this.input.on('pointerdown', this.onFirstTouch);
+      this.events.once('shutdown', () => {
+        this.input.off('pointerdown', this.onFirstTouch);
+      });
+      this.syncTouchUI();
+    }
+  }
+
+  /** Coarse-pointer devices (or the first real touch) bring the zones up. */
+  setTouchOn(on) {
+    if (!this.touch || this.touchOn === !!on) return;
+    this.touchOn = !!on;
+    this.syncTouchUI();
   }
 
   update() {
@@ -51,6 +124,18 @@ export default class HUDScene extends Phaser.Scene {
     const sys = game && game.orders;
     const score = game && game.score;
     if (!sys || !score) return;
+
+    // M8.3: ride the live pointers through the touch zones every frame;
+    // mouse-only sessions stay inert (zones off ⟹ reset).
+    if (this.touch) {
+      if (this.touchOn) {
+        const mgr = this.input.manager;
+        this.touch.update((mgr && mgr.pointers) || []);
+      } else {
+        this.touch.reset();
+      }
+    }
+
     this.barGfx.clear();
     const deliveries = sys.totalDelivered;
     this.statsText.setText(

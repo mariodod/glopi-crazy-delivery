@@ -10,6 +10,7 @@ import { TrafficSystem } from '../systems/TrafficSystem.js';
 import { applyDifficulty, resolveDifficulty } from '../data/difficulties.js';
 import { t } from '../i18n.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
+import { TouchControls } from '../systems/TouchControls.js';
 import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
 /** Middle of La Rambla (cols 32-33), heading north. */
@@ -114,6 +115,9 @@ export default class GameScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys(
       'W,A,S,D,UP,LEFT,DOWN,RIGHT,SPACE,SHIFT'
     );
+
+    // ---- M8.3 touch controls — HUD drives the state; here we just read it
+    this.touch = new TouchControls();
 
     this.input.keyboard.once('keydown-ESC', () => {
       this.scene.stop('HUD'); // overlay scene (M3.3); no-op if not running
@@ -674,11 +678,11 @@ export default class GameScene extends Phaser.Scene {
     const bellRising = !!gp && gp.bell && !this.padBellWas; // pad trigger edge
     this.padBellWas = !!gp && gp.bell;
 
-    // keyboard wins when pressed; otherwise the pad's stick/buttons drive
+    // keyboard wins when pressed; otherwise the pad, then touch zones (M8.3)
     const steerKeys = (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
-    const steer = blockInput ? 0 : (steerKeys !== 0 ? steerKeys : (gp ? gp.steer : 0));
-    const pedaling = !blockInput && ((W.isDown || UP.isDown) || (gp && gp.pedal));
-    const braking = !blockInput && ((S.isDown || DOWN.isDown) || (gp && gp.brake));
+    const steer = blockInput ? 0 : (steerKeys !== 0 ? steerKeys : gp ? gp.steer : this.touch.steer);
+    const pedaling = !blockInput && ((W.isDown || UP.isDown) || (gp && gp.pedal) || this.touch.pedal);
+    const braking = !blockInput && ((S.isDown || DOWN.isDown) || (gp && gp.brake) || this.touch.brake);
 
     const V = VEHICLE;
 

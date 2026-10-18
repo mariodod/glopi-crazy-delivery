@@ -38,6 +38,8 @@ const DICTIONARIES = {
     'hud.streak': 'racha x{n}',
     'hud.stop': 'PARADA {i}/{n}',
     'hud.hint': 'W acelera · S frena · A/D virar · frena en el círculo para recoger/entregar · MAYÚS campana · H debug · ESC = menú',
+    'ui.pedal': 'PEDAL',
+    'ui.brake': 'FRENO',
     // popups
     'pop.newOrder': '¡NUEVO PEDIDO!',
     'pop.picked': '¡Recogido! €{n}',
@@ -103,6 +105,8 @@ const DICTIONARIES = {
     'hud.streak': 'ratxa x{n}',
     'hud.stop': 'PARADA {i}/{n}',
     'hud.hint': 'W accelerar · S frenar · A/D girar · frena dins el cercle per recollir/entregar · MAJÙS campana · H debug · ESC = menú',
+    'ui.pedal': 'PEDAL',
+    'ui.brake': 'FRE',
     // popups
     'pop.newOrder': 'COMANDA NOVA!',
     'pop.picked': 'Recolzat! €{n}',
@@ -168,6 +172,8 @@ const DICTIONARIES = {
     'hud.streak': 'combo x{n}',
     'hud.stop': 'STOP {i}/{n}',
     'hud.hint': 'W pedal · S brake · A/D steer · stop in the circle to pick up/deliver · SHIFT bell · H debug · ESC = menu',
+    'ui.pedal': 'PEDAL',
+    'ui.brake': 'BRAKE',
     // popups
     'pop.newOrder': 'NEW ORDER!',
     'pop.picked': 'Picked up! €{n}',

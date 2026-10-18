@@ -8,6 +8,7 @@ import HUDScene from './scenes/HUDScene.js';
 import ResultsScene from './scenes/ResultsScene.js';
 
 import { GAME_WIDTH, GAME_HEIGHT, COLORS } from './config.js';
+import { applySoundMute } from './data/settings.js';
 
 const config = {
   type: Phaser.AUTO,
@@ -44,3 +45,7 @@ const game = new Phaser.Game(config);
 // Debug hook: reach the scene manager from devtools / test probes.
 // Way more useful than console.log spaghetti for tuning M2's bike feel.
 window.__game = game;
+
+// M8.3: honor the stored audio preference from the very first frame.
+game.events.once('ready', () => applySoundMute(game));
+applySoundMute(game);

@@ -3,6 +3,7 @@ import * as Phaser from 'phaser';
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, PLAYER } from '../config.js';
 import { DIFFICULTIES, nextDiffKey, storedKey, storeKey } from '../data/difficulties.js';
 import { loadCareer, rankOf } from '../data/career.js';
+import { applySoundMute, isMuted, setMuted, toggleFullscreen } from '../data/settings.js';
 import { cycleLang, getLang, t } from '../i18n.js';
 
 /**
@@ -116,6 +117,22 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(1, 0);
 
+    // ---- system buttons (M8.3): sound + fullscreen, right column --------
+    this.muteText = this.add
+      .text(GAME_WIDTH - 12, 54, '', {
+        fontFamily: 'monospace',
+        fontSize: '17px',
+        color: '#66d9e8',
+      })
+      .setOrigin(1, 0);
+    this.fsText = this.add
+      .text(GAME_WIDTH - 46, 54, '⛶', {
+        fontFamily: 'monospace',
+        fontSize: '17px',
+        color: '#66d9e8',
+      })
+      .setOrigin(1, 0);
+
     const refreshMenuTexts = () => {
       const tier = DIFFICULTIES[this.diffKey];
       this.subtitle.setText(t('menu.subtitle'));
@@ -125,6 +142,7 @@ export default class MenuScene extends Phaser.Scene {
         .setColor(TIER_COLORS[this.diffKey] ?? '#ffffff');
       this.diffDesc.setText(t(tier.descKey));
       this.langText.setText(t('menu.lang', { lang: getLang().toUpperCase() }));
+      this.muteText.setText(isMuted() ? '🔇' : '🔊');
       const career = loadCareer();
       this.rankText
         .setText(career && career.shifts > 0 ? t('menu.rank', { rank: t(rankOf(career.deliveries).key), d: career.deliveries }) : '');
@@ -152,6 +170,21 @@ export default class MenuScene extends Phaser.Scene {
     this.langText.on('pointerdown', (_pointer, _x, _y, event) => {
       event.stopPropagation();
       pointerCycle(cycleLangUi);
+    });
+    // sound + fullscreen share the click-gate so they never launch a shift
+    this.muteText.setInteractive({ useHandCursor: true });
+    this.muteText.on('pointerdown', (_pointer, _x, _y, event) => {
+      event.stopPropagation();
+      pointerCycle(() => {
+        setMuted(!isMuted());
+        applySoundMute(this.game);
+        refreshMenuTexts();
+      });
+    });
+    this.fsText.setInteractive({ useHandCursor: true });
+    this.fsText.on('pointerdown', (_pointer, _x, _y, event) => {
+      event.stopPropagation();
+      pointerCycle(() => toggleFullscreen(this.game));
     });
     this.input.keyboard.on('keydown-LEFT', cycleDiff);
     this.input.keyboard.on('keydown-RIGHT', cycleDiff);
