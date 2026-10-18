@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, PLAYER } from '../config.js';
+import { DIFFICULTIES, nextDiffKey, storedKey, storeKey } from '../data/difficulties.js';
 
 /**
  * Title screen: game logo, bouncing Glopi and the prompt to start.
@@ -74,7 +75,50 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setAlpha(0.8);
 
-    const start = () => this.scene.start('Game');
+    // ---- difficulty tier selector (M7): click or arrows to cycle ----------
+    this.diffKey = storedKey();
+    const TIER_COLORS = { chill: '#7de695', rush: '#ffd75e', monsoon: '#ff9e42' };
+    const tier = () => DIFFICULTIES[this.diffKey];
+    this.diffText = this.add
+      .text(cx, 520, '', {
+        fontFamily: 'monospace',
+        fontSize: '22px',
+        color: '#ffffff',
+      })
+      .setOrigin(0.5);
+    this.diffDesc = this.add
+      .text(cx, 550, '', {
+        fontFamily: 'monospace',
+        fontSize: '14px',
+        color: '#8d8daa',
+      })
+      .setOrigin(0.5);
+    const refreshDiff = () => {
+      this.diffText
+        .setText(`◀ TURNO: ${tier().label} ▶`)
+        .setColor(TIER_COLORS[this.diffKey] ?? '#ffffff');
+      this.diffDesc.setText(tier().desc);
+    };
+    const cycleDiff = () => {
+      this.diffKey = nextDiffKey(this.diffKey, 1);
+      storeKey(this.diffKey);
+      this.diffClickedAt = performance.now(); // guard the start-on-click binding
+      refreshDiff();
+    };
+    refreshDiff();
+    this.diffText.setInteractive({ useHandCursor: true });
+    this.diffText.on('pointerdown', (_pointer, _x, _y, event) => {
+      event.stopPropagation(); // cycle the tier; don't start the shift
+      cycleDiff();
+    });
+    this.input.keyboard.on('keydown-LEFT', cycleDiff);
+    this.input.keyboard.on('keydown-RIGHT', cycleDiff);
+
+    const start = () => {
+      // a click within the last 300ms was the tier row cycling, not a start
+      if (performance.now() - (this.diffClickedAt || 0) < 300) return;
+      this.scene.start('Game', { difficulty: this.diffKey });
+    };
     this.input.keyboard.once('keydown-SPACE', start);
     this.input.keyboard.once('keydown-ENTER', start);
     this.input.once('pointerdown', start);

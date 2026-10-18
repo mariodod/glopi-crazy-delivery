@@ -7,6 +7,7 @@ import {
 import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
+import { applyDifficulty, resolveDifficulty } from '../data/difficulties.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
@@ -27,10 +28,14 @@ export default class GameScene extends Phaser.Scene {
     super('Game');
   }
 
-  create() {
+  create(sceneData) {
     if (!this.textures.exists(PLAYER.textureKey)) {
       createPlaceholderTextures(this);
     }
+
+    // M7: difficulty tier — scene data (menu) wins over storage over default
+    this.difficulty = resolveDifficulty(sceneData);
+    this.diffBlocks = applyDifficulty(this.difficulty.key);
 
     this.buildCity();
 
@@ -122,7 +127,7 @@ export default class GameScene extends Phaser.Scene {
     this.orders = new OrderSystem({
       restaurants: this.pickPassable(RESTAURANTS),
       customers: this.pickPassable(CUSTOMERS),
-      config: ORDER,
+      config: this.diffBlocks.order,
     });
     this.orders.on('spawned', (o) =>
       this.floatText(o.restaurant.x, o.restaurant.y - 48, '¡NUEVO PEDIDO!', '#ffd75e'));
@@ -148,7 +153,7 @@ export default class GameScene extends Phaser.Scene {
     this.scene.launch('HUD');
 
     // ---- Traffic + pedestrians (M4) --------------------------------------
-    this.traffic = new TrafficSystem({ traffic: TRAFFIC, peds: PEDS });
+    this.traffic = new TrafficSystem({ traffic: this.diffBlocks.traffic, peds: this.diffBlocks.peds });
     this.dwellPickup = 0; // stationary time inside the pickup ring
     this.dwellDrop = 0; // stationary time inside the customer ring
     this.dwellVisual = null;
@@ -595,7 +600,9 @@ export default class GameScene extends Phaser.Scene {
     this.vel.scale(0.55); // "you really got hit" slowdown
     if (this.vel.length() > 20) this.heading = this.vel.angle();
 
-    const paid = this.score.crash(TRAFFIC.hitPenalty); // also kills the streak
+    // tier-scaled: monsoon charges more for a crash than chill does (M7)
+    const hitPenalty = this.traffic.traffic.hitPenalty;
+    const paid = this.score.crash(hitPenalty); // also kills the streak
     this.cameras.main.shake(150, 0.009); // M6: meatier impact
     // ragdoll: the pineapple tumbles on its own for a beat (M6.3)
     this.ragdollUntil = now + JUICE.ragdollDur * 1000;
