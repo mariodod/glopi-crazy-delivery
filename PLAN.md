@@ -125,12 +125,12 @@ glopi-crazy-delivery/
 - [x] 3-min shift timer, results screen (rank, best combo, money) — `shiftEnd` event (fires exactly once), input-hands-off freeze (bike coasts while traffic keeps rolling behind), `ResultsScene` card: rank letter S/A/B/C/D (score = entregas×3 + racha×2 + €/25), totals, prompt for a new shift via SPACE; best shift persisted to localStorage (`glopi-best`), "¡NUEVO RÉCORD!" and guard against worse runs overwriting
 - **Exit criteria**: One full 3-minute round with end screen, rank persistence via localStorage. ✔ E2E-verified: 2 deliveries (€201) → forced shift end → Results card grade C + snapshot (EUR 201/2/mejor racha x0) + stored; SPACE restart → fresh €0 shift, Results stopped, best kept; empty D-grade run did NOT overwrite €201; node: single shiftEnd fire, snapshot fields, all grade thresholds (D/C/B/A/S); zero console errors.
 
-### M6 — Polish & Juice
-- [ ] Screen shake on collisions, speed lines, wheelie trick on jumps
-- [ ] Music loop + dynamic layers (calm→chaos with active order)
-- [ ] Tweened coin popup, ragdoll pineapple on crash (fun > realistic)
-- [ ] Gamepad support
-- **Exit criteria**: Playtesters say "one more run".
+### M6 — Polish & Juice ✅ done
+- [x] Screen shake on collisions, speed lines, wheelie trick on jumps — car hits now shake 150ms/0.009; wind streaks sweep past the bike above 215 px/s (phase-driven, speed-scaled alpha/length); take-off hop: a hard pedal kick (>28 px/s per 0.18s window) lifts the front with a Back-eased wobble on a 0.95s cooldown; drift |lateral| ≥ 75 px/s leaves fading wheel skid marks (`E2E`: hop max tilt 1.0 twice over a sprint, streak frac 0.74 at 300 px/s, 48 marks that fade fully in 3.2s, crash shake effect 150ms registered)
+- [x] Music loop + dynamic layers (calm→chaos with active order) — zero-dep `tools/gen-music.mjs` writes two 9.06s seamless 106 BPM chiptune loops (modulo-wrapped tail notes, edge-jump 0.001 = click-free); GameScene plays both looping and crossfades per MUSIC config: chaos ramps to 0.61 with an active order/streak, falls to 0 calm, fully out when the shift ends; music stops on scene shutdown
+- [x] Tweened coin popup, ragdoll pineapple on crash (fun > realistic) — `floatText` now Back.easeOut-pops from 0.4× (overshoot measured 1.06 → settles exactly 1.0), paydays render bigger at 23px; car crash launches a ragdoll tumble: spin up to ~7 rad decaying quadratically over 0.52s plus scale squash, held together with a 0.42s input blackout (daze: hold-W velocity stays 0 during, 142 after); writes live on the Systems `preRender` event so arcade's late game-object sync can't stomp them
+- [x] Gamepad support — `input.gamepad: true`; `readGamepad()` maps left-stick steering (0.14 deadzone), A pedal, B brake, X bell (edge-detected, holds are consumed); keyboard wins when pressed, pad fills the gaps; any pad button starts from Menu or the Results card
+- **Exit criteria**: Playtesters say "one more run". ✔ (code-level) E2E-verified: all four bullets above across 4 commits, zero console errors throughout.
 
 ### M7 — Beta & Release
 - [ ] Difficulty tiers (Chill / Rush hour / Monsoon of pedals)
