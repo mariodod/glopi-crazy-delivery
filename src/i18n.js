@@ -53,7 +53,9 @@ const DICTIONARIES = {
     // results
     'res.title': 'SE TERMINÓ EL TURNO',
     'res.rank': 'RANGO',
-    'res.deliveries': '{n} entregas',
+    'res.money': 'EUR {n}',
+    'res.deliveries1': '1 entrega',
+    'res.deliveriesN': '{n} entregas',
     'res.streak': 'mejor racha x{n}',
     'res.nearMiss': '{n} casi-accidentes',
     'res.best': 'mejor turno: €{m} · {d}',
@@ -103,7 +105,9 @@ const DICTIONARIES = {
     // results
     'res.title': 'S\u2019ACABA EL TORN',
     'res.rank': 'RANG',
-    'res.deliveries': '{n} comandes',
+    'res.money': 'EUR {n}',
+    'res.deliveries1': '1 comanda',
+    'res.deliveriesN': '{n} comandes',
     'res.streak': 'millor ratxa x{n}',
     'res.nearMiss': '{n} quasi-accidents',
     'res.best': 'millor torn: €{m} · {d}',
@@ -153,7 +157,9 @@ const DICTIONARIES = {
     // results
     'res.title': 'SHIFT OVER',
     'res.rank': 'RANK',
-    'res.deliveries': '{n} deliveries',
+    'res.money': 'EUR {n}',
+    'res.deliveries1': '1 delivery',
+    'res.deliveriesN': '{n} deliveries',
     'res.streak': 'best combo x{n}',
     'res.nearMiss': '{n} close calls',
     'res.best': 'best turn: €{m} · {d}',

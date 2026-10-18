@@ -61,7 +61,7 @@ export default class ResultsScene extends Phaser.Scene {
 
     const rows = [
       t('res.money', { n: Math.round(data.money) }),
-      t('res.deliveries', { n: data.deliveries }),
+      t(data.deliveries === 1 ? 'res.deliveries1' : 'res.deliveriesN', { n: data.deliveries }),
       t('res.streak', { n: data.bestStreak }),
       t('res.nearMiss', { n: data.nearMisses }),
     ];

@@ -19,6 +19,11 @@ const config = {
   input: {
     gamepad: true,
   },
+  // keeps the GL framebuffer readable between frames: canvas.toDataURL /
+  // drawImage stay valid for promo captures (screenshots + gameplay GIF)
+  render: {
+    preserveDrawingBuffer: true,
+  },
   backgroundColor: '#' + COLORS.night.toString(16).padStart(6, '0'),
   physics: {
     default: 'arcade',

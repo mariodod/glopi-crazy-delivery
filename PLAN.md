@@ -133,10 +133,10 @@ glopi-crazy-delivery/
 - **Exit criteria**: Playtesters say "one more run". ✔ (code-level) E2E-verified: all four bullets above across 4 commits, zero console errors throughout.
 
 ### M7 — Beta & Release
-- [ ] Difficulty tiers (Chill / Rush hour / Monsoon of pedals)
-- [ ] Spanish + Catalan + English i18n of UI
-- [ ] Export web build (itch.io / GitHub Pages)
-- **Exit criteria**: Public page with screenshots + short gameplay GIF.
+- [x] Difficulty tiers (Chill / Rush hour / Monsoon of pedals) — pure `src/data/difficulties.js` packs merged onto the base config blocks at GameScene create (`{ ...TRAFFIC, ...d.traffic }`): chill 6 cars+3 scooters, slow speeds, hitPenalty 4, ×1.25 order time, 10 peds; rush = base; monsoon 12+7 fast, penalty 6, ×0.82, 20 peds. Selector row on the menu (◀ ▶ keys or click; 300ms debounce so the start-on-click can't misfire), persisted in `glopi-diff`, and `resolveDifficulty()` falls back scene-data → storage → rush so Results restarts keep the tier. E2E: menu cycles rush→monsoon→chill with storage write; chill run shows 6 cars/3 scooters/10 peds, hitPenalty 4, order clock 13s base + 0.6875s/tile (formula match to the cent); restart-from-Results keeps tier; zero console errors
+- [x] Spanish + Catalan + English i18n of UI — flat `src/i18n.js` dictionaries with `t(key, params)` ES-fallback; L key or top-right row cycles live on the menu (all texts re-render, stored in `glopi-lang`); menu, HUD card (RECOGER/ENTREGA·tier word, TURNO clock, entregas/racha), all popups, tier words (¡RÁPIDO!/RAPIDÍSSIM!/FAST!), results card, hint bar and difficulty labels localized; flavor content (dishes, notes) stays Barcelona-mixed by design. E2E: cycled CA↔EN↔ES on the menu with storage persistence; ran full shifts in ES, EN and CA — HUD, pickups, paydays (+€132 · ¡RÁPIDO!/RAPIDÍSSIM!/FAST!) and results card all rendered per language; zero console errors. (`serve.json` forces `no-cache, must-revalidate` so dev reloads always revalidate modules)
+- [x] Export web build (GitHub Pages) — `node tools/build.mjs` assembles `dist/`: landing page (hero + screenshots) at `/`, the whole game at `/juego/` (relative paths, still zero-dep CDN import map), `promo/` media. Shipped as a parentless `gh-pages` commit; live at <https://mariodod.github.io/glopi-crazy-delivery/>. Screenshots + gameplay GIF sit in `promo/` (PNGs via `preserveDrawingBuffer` canvas capture; GIF via `tools/gif-encoder.js` — in-browser 3-3-2 quantize + LZW GIF89a encoder, 34 frames @480×320, verified by re-decoding in `tools/verify-gif.mjs`). E2E on the live site: menu → start → order accepted, zero console errors
+- **Exit criteria**: Public page with screenshots + short gameplay GIF. ✔ <https://mariodod.github.io/glopi-crazy-delivery/> serves the landing with `promo/gameplay.gif` (660KB, ~3s loop) + 5 screenshots, and the game runs from the `/juego/` page.
 
 ## 7. Risks & Anti-Goals
 
