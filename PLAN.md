@@ -145,6 +145,12 @@ glopi-crazy-delivery/
 - [x] Release pass — rebuilt `dist/` via `node tools/build.mjs` (career.js/settings.js/TouchControls.js included), redeployed the orphan `gh-pages` commit; landing version stamp `v1.1 · M8 · Phaser 3.90`
 - **Exit criteria**: playable with thumbs, mute + fullscreen you can find without reading docs, a visible long-term goal. ✔ E2E-verified across 4 commits, zero console errors throughout.
 
+### M9 — code health pass (post-v1.1 audit) ✅ done
+- [x] End-of-shift bug hunt — `GameScene.shiftOver` was read in three places but never assigned, so after the results card appeared the offer spawner kept ticking underneath (a phantom order every `respawnDelay`) and the pedals stayed live behind the overlay. Now `create()` initializes it and `endShift()` sets it. ESC while the results card was up also left a sticky `Results` overlay floating over the menu (and its SPACE handler double-firing scene starts) — the ESC handler now stops `Results` alongside `HUD`. E2E: pedal held 250 frames after shift end = speed 0, order stays `null` past the respawn window, ESC returns to a clean `Menu` only, fresh shift restarts normal; zero console errors
+- [x] Dead code & unused exports removed — `juiceState` debug snapshot (never read), `drawn` counter in the streak drawer, duplicate hop-arc formula in `update()` (now single-sourced from `updateJuice()`), redundant `createPlaceholderTextures` call in GameScene (Preload always creates them first), unused OrderSystem `state` getter + mid-branch re-assignment of `o.state`, dead `bell` event emission in TrafficSystem (no subscriber; the bell caller drives its own FX), HUD's dead `TouchControls` import + one-use `stop` alias, and stale `timeLeft // set at accept` comment. Internal-only exports demoted to module-private: `LANGS`/`setLang` (i18n), `TOUCH_ZONES`, `RANKS`/`emptyCareer` (career), `TIERS` (OrderSystem), `DIFFICULTY_ORDER`/`DEFAULT_DIFFICULTY`. Net −21 lines
+- [x] Housekeeping — package.json `version` 0.1.0 → 1.1.0 (matches the shipped stamp) and `npm run gen` now regenerates the music loop too; README tech list + controls table gained the touch zones, language key and mute/fullscreen buttons
+- **Exit criteria**: clean sweep verified — automated cross-check (i18n keys ×58, config fields ×85, export-import spot list) reports zero unused items; headless suites (33+13+16 asserts) green after the cull; full browser drill (menu → shift → pedal-hop → 3-leg chain delivery → results/career → ESC → restart) with zero console errors
+
 ## 7. Risks & Anti-Goals
 
 **Risks**
