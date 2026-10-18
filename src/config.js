@@ -119,6 +119,10 @@ export const JUICE = {
   hopAngle: 0.24, // rad of front-lift at full hop
   hopTime: 0.4, // s the hop takes to unwind
   hopKick: 28, // px/s of windowed speed gain (0.18s) that triggers a hop
+
+  ragdollSpin: 7.0, // rad of extra tumble yaw on a car crash
+  ragdollDur: 0.52, // s for the tumble to unwind back to the heading
+  dazeTime: 0.42, // s of input blackout right after the crash
 };
 
 /**

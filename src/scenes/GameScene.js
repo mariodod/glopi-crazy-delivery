@@ -72,6 +72,8 @@ export default class GameScene extends Phaser.Scene {
     this.skidClock = 0;
     this.hopT = 0; // s left of the current take-off hop
     this.hopCd = 0; // s until the next hop may fire
+    this.ragdollUntil = 0; // ms timestamp: tumble window end
+    this.dazeUntil = 0; // ms timestamp: input blackout end
     this.speedRef = 0; // speed sampled JUICE window ago
     this.speedRefTimer = 0;
     this.juiceState = { frac: 0, marks: 0, hop: 0 }; // debuggable snapshot
@@ -89,7 +91,13 @@ export default class GameScene extends Phaser.Scene {
     };
     if (this.sound.locked) this.sound.once('unlocked', startMusic);
     else startMusic();
+    this.visState = { hopP: 0, squish: 0 }; // last-say visual offsets
+
+    // the final say on bike visuals runs after every other writer
+    this.bikeVisualHook = () => this.applyBikeVisuals();
+    this.events.on('prerender', this.bikeVisualHook);
     this.events.once('shutdown', () => {
+      this.events.off('prerender', this.bikeVisualHook);
       if (this.music) {
         this.music.calm.stop();
         this.music.chaos.stop();
@@ -123,7 +131,11 @@ export default class GameScene extends Phaser.Scene {
     });
     this.orders.on('delivered', (o) => {
       // full pay + crazy-taxi-grade word: `+€132 · ¡RÁPIDO!`, tier-colored
-      this.floatText(o.customer.x, o.customer.y - 48, `+€${o.pay} · ${o.tier.word}`, o.tier.color);
+      this.floatText(
+        o.customer.x, o.customer.y - 48,
+        `+€${o.pay} · ${o.tier.word}`, o.tier.color,
+        { size: 23 } // the payday gets the biggest pop
+      );
       this.score.deliver(o.pay);
       this.playSfx('sfx-coin');
     });
@@ -291,18 +303,25 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  /** Short-lived floating text (popups on order events). */
-  floatText(x, y, msg, color) {
+  /** Short-lived floating text with a scale pop (M6.3). */
+  floatText(x, y, msg, color, opts = {}) {
     const t = this.add
       .text(x, y, msg, {
         fontFamily: 'monospace',
-        fontSize: '18px',
+        fontSize: `${opts.size ?? 18}px`,
         color,
         stroke: '#14142b',
         strokeThickness: 4,
       })
       .setOrigin(0.5)
       .setDepth(60);
+    t.setScale(0.4); // Back easing pops it past 1 and settles
+    this.tweens.add({
+      targets: t,
+      scale: 1,
+      duration: 260,
+      ease: 'Back.easeOut',
+    });
     this.tweens.add({
       targets: t,
       y: y - 36,
@@ -318,6 +337,32 @@ export default class GameScene extends Phaser.Scene {
     if (this.hopT <= 0) return 0;
     const p = this.hopT / JUICE.hopTime; // 1 → 0
     return JUICE.hopAngle * Math.sin((1 - p) * Math.PI);
+  }
+
+  /** Last say on the bike sprite: applied after every other writer (M6.3). */
+  applyBikeVisuals() {
+    if (!this.visState) return;
+    const { hopP, squish } = this.visState;
+    const rot = this.heading + this.hopTilt() + this.ragdollSpin();
+    this.glopi.rotation = rot;
+    this.glopi.setScale(1 + 0.12 * hopP - 0.14 * squish);
+    this.glopi.body.rotation = rot; // keep arcade's later sync harmless
+  }
+
+  /** Extra tumble yaw right after a crash; unwinds to zero (M6.3). */
+  ragdollSpin() {
+    if (this.time.now >= this.ragdollUntil) return 0;
+    const p = (this.time.now - (this.ragdollUntil - JUICE.ragdollDur * 1000)) /
+      (JUICE.ragdollDur * 1000);
+    return JUICE.ragdollSpin * (1 - p) * (1 - p);
+  }
+
+  /** Scale squash decaying over the same ragdoll window (M6.3). */
+  ragdollSquash() {
+    if (this.time.now >= this.ragdollUntil) return 0;
+    const p = (this.time.now - (this.ragdollUntil - JUICE.ragdollDur * 1000)) /
+      (JUICE.ragdollDur * 1000);
+    return (1 - p) * (1 - p);
   }
 
   /**
@@ -530,6 +575,9 @@ export default class GameScene extends Phaser.Scene {
 
     const paid = this.score.crash(TRAFFIC.hitPenalty); // also kills the streak
     this.cameras.main.shake(150, 0.009); // M6: meatier impact
+    // ragdoll: the pineapple tumbles on its own for a beat (M6.3)
+    this.ragdollUntil = now + JUICE.ragdollDur * 1000;
+    this.dazeUntil = now + JUICE.dazeTime * 1000;
     if (paid > 0) {
       this.floatText(carSprite.x, carSprite.y - 34, `−€${paid} ¡AY!`, '#ff5e8b');
     } else {
@@ -573,9 +621,9 @@ export default class GameScene extends Phaser.Scene {
     const dt = Math.min(deltaRaw, 50) / 1000; // frame-rate independent, capped
     const { W, A, S, D, UP, LEFT, DOWN, RIGHT } = this.keys;
 
-    // shift is over: hands off the handlebars, the bike coasts to a stop
-    // while the world keeps rolling behind the results card
-    const blockInput = this.shiftOver === true;
+    // shift is over (or Glopi is dazed from a crash): hands off the
+    // handlebars, the bike coasts to a stop while the world keeps rolling
+    const blockInput = this.shiftOver === true || this.time.now < this.dazeUntil;
     const steer = blockInput ? 0 : (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
     const pedaling = !blockInput && (W.isDown || UP.isDown);
     const braking = !blockInput && (S.isDown || DOWN.isDown);
@@ -619,7 +667,9 @@ export default class GameScene extends Phaser.Scene {
     this.vel.set(h.x * forward + p.x * lateral, h.y * forward + p.y * lateral);
 
     this.glopi.body.velocity.set(this.vel.x, this.vel.y);
-    this.glopi.rotation = this.heading + this.hopTilt();
+    const hopP = this.hopT > 0 ? Math.sin((1 - this.hopT / JUICE.hopTime) * Math.PI) : 0;
+    // stash visual offsets; applied in preRender so nothing stomps them
+    this.visState = { hopP, squish: this.ragdollSquash() };
 
     // camera: look where you're going, zoom out at speed
     const cam = this.cameras.main;
