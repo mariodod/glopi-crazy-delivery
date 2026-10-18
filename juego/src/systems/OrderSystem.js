@@ -19,7 +19,7 @@ import { t } from '../i18n.js';
  *   ORANGE ≥ 12%  — 30% tip
  *   RED    < 12%  — 10% tip
  */
-export const TIERS = [
+const TIERS = [
   { key: 'GREEN', at: 0.55, mult: 1.0, wordKey: 'tier.word.fast', color: '#7de695' },
   { key: 'YELLOW', at: 0.30, mult: 0.6, wordKey: 'tier.word.ok', color: '#ffd75e' },
   { key: 'ORANGE', at: 0.12, mult: 0.3, wordKey: 'tier.word.late', color: '#ff9e42' },
@@ -72,10 +72,6 @@ export class OrderSystem {
 
   get order() {
     return this.current;
-  }
-
-  get state() {
-    return this.current ? this.current.state : 'idle';
   }
 
   /** Timer + respawn heartbeat; call once per frame. */
@@ -166,12 +162,11 @@ export class OrderSystem {
       routePx,
       fare,
       timeTotal: legs[0].timeTotal,
-      timeLeft: 0, // set at accept (the clock freezes while offered)
+      timeLeft: legs[0].timeTotal, // ticks only once the order is active
       tip: 0,
       pay: 0,
       chainPay: 0,
     };
-    this.current.timeLeft = this.current.timeTotal;
     this.emit('spawned', this.current);
     return this.current;
   }
@@ -205,7 +200,6 @@ export class OrderSystem {
       // mid-chain: pay this leg, then the next stop becomes the target with
       // a fresh clock (handlers run before the reset clears this leg's fields)
       o.nextStop = true;
-      o.state = 'active';
       this.emit('legDone', o);
       if (this.current !== o) return true; // a handler ended the shift
       o.legIndex += 1;

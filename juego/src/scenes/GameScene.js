@@ -4,7 +4,6 @@ import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
   TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD,
 } from '../config.js';
-import { createPlaceholderTextures } from '../sprites/placeholders.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
 import { applyDifficulty, resolveDifficulty } from '../data/difficulties.js';
@@ -31,13 +30,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create(sceneData) {
-    if (!this.textures.exists(PLAYER.textureKey)) {
-      createPlaceholderTextures(this);
-    }
-
     // M7: difficulty tier — scene data (menu) wins over storage over default
-    this.difficulty = resolveDifficulty(sceneData);
-    this.diffBlocks = applyDifficulty(this.difficulty.key);
+    this.diffBlocks = applyDifficulty(resolveDifficulty(sceneData).key);
 
     this.buildCity();
 
@@ -52,6 +46,7 @@ export default class GameScene extends Phaser.Scene {
     this.heading = SPAWN.heading;
     this.vel = new Phaser.Math.Vector2(0, 0);
     this.lastImpact = -1;
+    this.shiftOver = false;
 
     this.physics.add.collider(this.glopi, this.wallLayer, this.onWallHit, null, this);
     this.physics.add.collider(this.glopi, this.groundLayer, this.onWallHit, null, this); // sea edges
@@ -84,7 +79,6 @@ export default class GameScene extends Phaser.Scene {
     this.padBellWas = false; // pad bell button previous state (edge detect)
     this.speedRef = 0; // speed sampled JUICE window ago
     this.speedRefTimer = 0;
-    this.juiceState = { frac: 0, marks: 0, hop: 0 }; // debuggable snapshot
 
     // ---- music (M6.2): seamless calm/chaos loops the mixer crossfades ----
     this.music = null;
@@ -121,6 +115,7 @@ export default class GameScene extends Phaser.Scene {
 
     this.input.keyboard.once('keydown-ESC', () => {
       this.scene.stop('HUD'); // overlay scene (M3.3); no-op if not running
+      this.scene.stop('Results'); // in case ESC lands on the results card
       this.scene.start('Menu');
     });
 
@@ -394,7 +389,8 @@ export default class GameScene extends Phaser.Scene {
 
   /**
    * Juice per frame: streaks at high speed, wheelie hop on a hard kick,
-   * skid marks when the rear slips. `lateral` is the model's lateral slip.
+   * skid marks when the rear slips. `lateral` is the lateral slip. Returns
+   * the hop arc 0..1 so update() can drive the sprite offset from it.
    */
   updateJuice(dt, timeSec, { pedaling, lateral, speed }) {
     const J = JUICE;
@@ -421,9 +417,7 @@ export default class GameScene extends Phaser.Scene {
     const frac = Phaser.Math.Clamp(
       (speed - J.linesAbove) / (J.linesSaturate - J.linesAbove), 0, 1
     );
-    let drawn = 0;
-    if (frac > 0 && speed > 1) {
-      const bx = this.glopi.x;
+    if (frac > 0 && speed > 1) {      const bx = this.glopi.x;
       const by = this.glopi.y;
       const ux = this.vel.x / speed;
       const uy = this.vel.y / speed;
@@ -442,7 +436,6 @@ export default class GameScene extends Phaser.Scene {
           cx2 - ux * len / 2, cy2 - uy * len / 2,
           cx2 + ux * len / 2, cy2 + uy * len / 2
         );
-        drawn += 1;
       }
     }
 
@@ -479,10 +472,8 @@ export default class GameScene extends Phaser.Scene {
       );
     }
 
-    this.juiceState = { frac, marks: alive.length, hop: Math.round(hopP * 100) / 100 };
-    return { frac, marks: alive.length, hopP };
+    return hopP; // caller drives the wheelie-hop visual offset from this
   }
-
   /** Crossfade the calm/chaos loop pair by game state (M6.2). */
   mixMusic(dt) {
     if (!this.music) return;
@@ -600,6 +591,7 @@ export default class GameScene extends Phaser.Scene {
 
   /** Shift's up: no more orders, the results card takes over the screen. */
   endShift(snapshot) {
+    this.shiftOver = true; // hands off + stops the offer spawner in update()
     this.orders.reset(); // clears zones, HUD card and the beacon
     this.dwellVisual = null;
     this.dwellPickup = 0;
@@ -723,9 +715,6 @@ export default class GameScene extends Phaser.Scene {
     this.vel.set(h.x * forward + p.x * lateral, h.y * forward + p.y * lateral);
 
     this.glopi.body.velocity.set(this.vel.x, this.vel.y);
-    const hopP = this.hopT > 0 ? Math.sin((1 - this.hopT / JUICE.hopTime) * Math.PI) : 0;
-    // stash visual offsets; applied in preRender so nothing stomps them
-    this.visState = { hopP, squish: this.ragdollSquash() };
 
     // camera: look where you're going, zoom out at speed
     const cam = this.cameras.main;
@@ -734,11 +723,14 @@ export default class GameScene extends Phaser.Scene {
     const targetZoom = 1 - CAMERA.zoomSpan * Phaser.Math.Clamp(spdNow / VEHICLE.maxSpeed, 0, 1);
     cam.setZoom(cam.zoom + (targetZoom - cam.zoom) * Math.min(1, CAMERA.zoomLerp * dt));
 
-    this.updateJuice(dt, timeMs / 1000, {
+    // juice FX compute the hop arc; stash visual offsets (applied in
+    // preRender so nothing stomps them)
+    const hopP = this.updateJuice(dt, timeMs / 1000, {
       pedaling,
       lateral,
       speed: spdNow,
     });
+    this.visState = { hopP, squish: this.ragdollSquash() };
     this.debugVals = { forward, lateral };
     if (this.debugOn) this.drawDebug();
 

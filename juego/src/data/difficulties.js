@@ -51,8 +51,8 @@ export const DIFFICULTIES = {
   },
 };
 
-export const DIFFICULTY_ORDER = ['chill', 'rush', 'monsoon'];
-export const DEFAULT_DIFFICULTY = 'rush';
+const DIFFICULTY_ORDER = ['chill', 'rush', 'monsoon'];
+const DEFAULT_DIFFICULTY = 'rush';
 const STORAGE_KEY = 'glopi-diff';
 
 /** Resolve the tier at GameScene.create: data overrides storage overrides default. */

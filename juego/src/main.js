@@ -46,6 +46,5 @@ const game = new Phaser.Game(config);
 // Way more useful than console.log spaghetti for tuning M2's bike feel.
 window.__game = game;
 
-// M8.3: honor the stored audio preference from the very first frame.
+// M8.3: honor the stored audio preference once the sound manager is ready.
 game.events.once('ready', () => applySoundMute(game));
-applySoundMute(game);

@@ -7,7 +7,7 @@
  * GameScene reads `steer` (-1/0/+1), `pedal`, `brake` AFTER the keyboard and
  * the gamepad, so desktop behavior is untouched.
  */
-export const TOUCH_ZONES = [
+const TOUCH_ZONES = [
   { key: 'left', x: 76, y: 470, w: 108, h: 106 },
   { key: 'right', x: 196, y: 470, w: 108, h: 106 },
   { key: 'brake', x: 668, y: 470, w: 106, h: 106 },
