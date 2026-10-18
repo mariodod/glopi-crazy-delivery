@@ -67,9 +67,8 @@ export default class GameScene extends Phaser.Scene {
       })
       .setDepth(30);
 
-    // juice layers (M6.1): skid marks on the asphalt + wind streaks at speed
+    // juice layer (M6.1): skid marks on the asphalt
     this.skidGfx = this.add.graphics().setDepth(4);
-    this.linesGfx = this.add.graphics().setDepth(26);
     this.skidMarks = []; // { x, y, a, t } pairs of wheel marks
     this.skidClock = 0;
     this.hopT = 0; // s left of the current take-off hop
@@ -388,9 +387,9 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Juice per frame: streaks at high speed, wheelie hop on a hard kick,
-   * skid marks when the rear slips. `lateral` is the lateral slip. Returns
-   * the hop arc 0..1 so update() can drive the sprite offset from it.
+   * Juice per frame: skid marks while the rear slips, wheelie hop on a hard
+   * kick and the crash ragdoll. Returns the hop arc 0..1 so update() can
+   * drive the sprite offset from it.
    */
   updateJuice(dt, timeSec, { pedaling, lateral, speed }) {
     const J = JUICE;
@@ -410,34 +409,6 @@ export default class GameScene extends Phaser.Scene {
       }
     }
     const hopP = this.hopT > 0 ? Math.sin((1 - this.hopT / J.hopTime) * Math.PI) : 0;
-
-    // ---- wind streaks: phase-driven sweep of short lines past the bike ----
-    const lg = this.linesGfx;
-    lg.clear();
-    const frac = Phaser.Math.Clamp(
-      (speed - J.linesAbove) / (J.linesSaturate - J.linesAbove), 0, 1
-    );
-    if (frac > 0 && speed > 1) {      const bx = this.glopi.x;
-      const by = this.glopi.y;
-      const ux = this.vel.x / speed;
-      const uy = this.vel.y / speed;
-      const vxx = -uy; // perpendicular
-      const vyy = ux;
-      for (let i = 0; i < J.linesCount; i++) {
-        const phase = (timeSec * 0.62 + i / J.linesCount) % 1;
-        const along = Phaser.Math.Linear(J.linesSpan * 0.45, -J.linesSpan * 0.55, phase);
-        const side = (i % 2 === 0 ? 1 : -1) * (34 + ((i * 13) % 52));
-        const cx2 = bx + ux * along + vxx * side;
-        const cy2 = by + uy * along + vyy * side;
-        const a = Math.sin(phase * Math.PI) * frac * 0.5;
-        const len = Phaser.Math.Linear(J.linesLen[0], J.linesLen[1], frac);
-        lg.lineStyle(2, 0xffffff, a);
-        lg.lineBetween(
-          cx2 - ux * len / 2, cy2 - uy * len / 2,
-          cx2 + ux * len / 2, cy2 + uy * len / 2
-        );
-      }
-    }
 
     // ---- skid marks: rear wheels bite the asphalt while sliding ----
     this.skidClock -= dt;
@@ -599,19 +570,28 @@ export default class GameScene extends Phaser.Scene {
     this.scene.launch('Results', { ...snapshot, grade: this.score.grade() });
   }
 
-  /** Car collision: bounce like a soft wall + coin penalty + sparks. */
+  /** Car collision: eject out of the car's path + coin penalty + sparks. */
   onCarHit(_glopi, carSprite) {
     const now = this.time.now;
     if (now - this.lastCarHit < TRAFFIC.hitCooldown) return;
     this.lastCarHit = now;
 
-    const blocked = this.glopi.body.blocked;
-    if (blocked.up) this.vel.y = Math.abs(this.vel.y) * 0.25;
-    if (blocked.down) this.vel.y = -Math.abs(this.vel.y) * 0.25;
-    if (blocked.left) this.vel.x = Math.abs(this.vel.x) * 0.25;
-    if (blocked.right) this.vel.x = -Math.abs(this.vel.x) * 0.25;
-    this.vel.scale(0.55); // "you really got hit" slowdown
-    if (this.vel.length() > 20) this.heading = this.vel.angle();
+    // Knock Glopi away from the car (v1.1 feedback): the arcade collider
+    // otherwise keeps separating the bike along the car's motion every
+    // frame, which reads as being carried helplessly down the lane. The
+    // daze window is short (0.18 s) so steering resumes almost at once —
+    // the longer ragdoll tumbles on as pure cosmetics meanwhile.
+    const away = new Phaser.Math.Vector2(
+      this.glopi.x - carSprite.x, this.glopi.y - carSprite.y
+    );
+    if (away.lengthSq() < 1) {
+      // bike dead-center under the car: bounce backwards along the heading
+      away.set(-Math.cos(this.heading), -Math.sin(this.heading));
+    } else {
+      away.normalize();
+    }
+    this.vel.set(away.x * JUICE.knockback, away.y * JUICE.knockback);
+    this.heading = Math.atan2(this.vel.y, this.vel.x);
 
     // tier-scaled: monsoon charges more for a crash than chill does (M7)
     const hitPenalty = this.traffic.traffic.hitPenalty;

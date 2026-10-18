@@ -41,7 +41,7 @@ export class ScoreSystem {
     this.earnedFromMisses = 0; // total bonuses earned from near misses
     this.penalties = 0; // total € actually paid out on crashes
     this.deliveries = 0;
-    this.shiftLeft = this.cfg.shiftLength ?? 180;
+    this.shiftLeft = this.cfg.shiftLength ?? 60;
     this.shiftOver = false;
   }
 

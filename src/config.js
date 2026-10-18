@@ -103,16 +103,10 @@ export const PEDS = {
 };
 
 /**
- * M6 juice: fast-riding streaks, drift skid marks and the take-off hop.
- * All per-second units; thresholds in px/s.
+ * M6 juice: drift skid marks and the take-off hop. All per-second units;
+ * thresholds in px/s.
  */
 export const JUICE = {
-  linesAbove: 215, // px/s: speed streaks start
-  linesSaturate: 330, // px/s: streaks at full strength
-  linesCount: 9, // pooled streaks (recycled by phase)
-  linesSpan: 300, // px a streak sweeps past the bike
-  linesLen: [16, 44], // px at low..full speed
-
   skidLateral: 75, // |lateral| px/s to start marking the asphalt
   skidGap: 0.035, // s between marked pairs
   skidLife: 3.0, // s before a mark fades away
@@ -124,7 +118,8 @@ export const JUICE = {
 
   ragdollSpin: 7.0, // rad of extra tumble yaw on a car crash
   ragdollDur: 0.52, // s for the tumble to unwind back to the heading
-  dazeTime: 0.42, // s of input blackout right after the crash
+  dazeTime: 0.18, // s of input blackout right after a crash — short: control
+  knockback: 240, // px/s eject speed away from the car, so it can't pin you
 };
 
 /**
@@ -154,12 +149,13 @@ export const GAMEPAD = {
 /**
  * Scoring (M5). One wallet for the whole shift: near-miss bonuses chain
  * into a streak multiplier, delivery pay lands here, crash penalties burn.
- * `shiftLength` drives the 3-minute shift; grade thresholds rank the run.
+ * `shiftLength` drives the 60-second shift; grade thresholds rank the run
+ * (score = d·3 + streak·2 + money/25), scaled to the short clock.
  */
 export const SCORE = {
   streakWindow: 5, // s — consecutive near-misses within this window chain
   multStep: 0.5, // multiplier gain per streak step (x1, x1.5, x2, …)
   multMax: 3, // bonus multiplier cap
-  shiftLength: 180, // s — a full Glopo shift
-  grades: { S: 45, A: 32, B: 20, C: 10 }, // rank thresholds (score = d·3 + streak·2 + money/25), D below C
+  shiftLength: 60, // s — a full Glopo shift (v1.1.1: was 180)
+  grades: { S: 22, A: 15, B: 9, C: 4 }, // rescaled for the 60 s shift
 };
