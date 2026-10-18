@@ -13,7 +13,8 @@ Full design document & milestones: [PLAN.md](PLAN.md)
 
 - JavaScript + [Phaser 3](https://phaser.io/) via ESM import map — zero npm deps, zero build step
 - Tiled tilemaps, pixel-art assets, Web Audio chiptune loops
-- ES / CA / EN UI (`src/i18n.js`), three difficulty tiers (`src/data/difficulties.js`), keyboard + gamepad
+- ES / CA / EN UI (`src/i18n.js`), three difficulty tiers (`src/data/difficulties.js`)
+- Keyboard, gamepad or on-screen touch controls; shift ends with a rider-rank career card
 
 ## Run (dev)
 
@@ -43,11 +44,13 @@ gameplay GIF (`promo/gameplay.gif`); `tools/verify-gif.mjs` re-decodes it.
 
 | Action | Key |
 |---|---|
-| Pedal | `W` / `↑` |
-| Brake | `S` / `↓` |
-| Steer | `A` `D` / `←` `→` |
+| Pedal | `W` / `↑` / pedal button (touch) |
+| Brake | `S` / `↓` / brake button (touch) |
+| Steer | `A` `D` / `←` `→` / steer pads (touch) |
 | Accept/interact | `SPACE` |
 | Bell | `SHIFT` |
+| Language | `L` |
+| Mute · fullscreen | 🔇 / ⛶ buttons (menu + HUD) |
 | Pause | `ESC` |
 
 ## License

@@ -231,8 +231,8 @@ export function getLang() {
   return current;
 }
 
-/** Set the language explicitly (used by the menu cycle button). */
-export function setLang(lang) {
+/** Set the language explicitly (the menu cycle button lives on top of this). */
+function setLang(lang) {
   if (LANGS.includes(lang)) {
     current = lang;
     try {
@@ -241,12 +241,10 @@ export function setLang(lang) {
   }
 }
 
-/** Advance to the next language in ES→CA→EN→ES; returns the new code. */
+/** Advance to the next language in ES→CA→EN→ES. */
 export function cycleLang() {
   const i = LANGS.indexOf(getLang());
-  const next = LANGS[(i + 1) % LANGS.length];
-  setLang(next);
-  return current;
+  setLang(LANGS[(i + 1) % LANGS.length]);
 }
 
 /**
@@ -263,5 +261,3 @@ export function t(key, params) {
   }
   return s;
 }
-
-export { LANGS };

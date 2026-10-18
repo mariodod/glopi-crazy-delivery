@@ -6,7 +6,7 @@
 const STORAGE_KEY = 'glopi-career';
 
 /** Rank ladder: lifetime deliveries threshold → i18n title. */
-export const RANKS = [
+const RANKS = [
   { at: 0, key: 'rank.novato' },
   { at: 10, key: 'rank.junior' },
   { at: 30, key: 'rank.senior' },
@@ -38,7 +38,7 @@ function saveCareer(career) {
 }
 
 /** Blank career (fresh profiles). */
-export function emptyCareer() {
+function emptyCareer() {
   return { shifts: 0, deliveries: 0, money: 0 };
 }
 

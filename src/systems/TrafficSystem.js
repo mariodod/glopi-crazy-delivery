@@ -18,7 +18,7 @@ export class TrafficSystem {
     this.traffic = traffic;
     this.pedsCfg = peds;
     this.rng = rng;
-    this.handlers = { nearmiss: new Set(), bumped: new Set(), bell: new Set() };
+    this.handlers = { nearmiss: new Set(), bumped: new Set() };
     this.buildLanes();
     this.cars = this.spawnCars();
     this.peds = this.spawnPeds();
@@ -213,7 +213,6 @@ export class TrafficSystem {
         scattered++;
       }
     }
-    if (scattered > 0) this.emit('bell', { x: fx, y: fy, scattered });
     return scattered;
   }
 

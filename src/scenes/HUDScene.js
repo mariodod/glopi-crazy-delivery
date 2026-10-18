@@ -2,7 +2,6 @@ import * as Phaser from 'phaser';
 
 import { GAME_WIDTH, GAME_HEIGHT } from '../config.js';
 import { tipTier } from '../systems/OrderSystem.js';
-import { TouchControls } from '../systems/TouchControls.js';
 import { applySoundMute, isMuted, setMuted, toggleFullscreen } from '../data/settings.js';
 import { t } from '../i18n.js';
 
@@ -166,12 +165,11 @@ export default class HUDScene extends Phaser.Scene {
     } else {
       const frac = Phaser.Math.Clamp(o.timeLeft / o.timeTotal, 0, 1);
       const tier = tipTier(frac);
-      const stop = o.customer; // the current chain leg (M8.1)
       this.tagText.setText(t('hud.deliverTag', { word: tier.word })).setColor(tier.color);
       this.nameText.setText(o.customer.name);
       this.subText.setText(o.customer.note);
       const stopTag = o.legCount > 1 ? ` · ${t('hud.stop', { i: o.legIndex + 1, n: o.legCount })}` : '';
-      this.fareText.setText(`€${stop.fare} · ${this.playerMeters(o.customer)}m${stopTag}`);
+      this.fareText.setText(`€${o.customer.fare} · ${this.playerMeters(o.customer)}m${stopTag}`);
       const color = parseInt(tier.color.slice(1), 16);
       this.barGfx.fillStyle(0x2b2b45, 1);
       this.barGfx.fillRect(24, 100, 280, 8);
