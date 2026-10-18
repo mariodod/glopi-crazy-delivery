@@ -136,8 +136,9 @@ export default class GameScene extends Phaser.Scene {
       this.floatText(o.restaurant.x, o.restaurant.y - 48, t('pop.picked', { n: o.fare }), '#7de695');
       this.playSfx('sfx-blip');
     });
-    this.orders.on('delivered', (o) => {
-      // full pay + crazy-taxi-grade word: `+€132 · ¡RÁPIDO!`, tier-colored
+    // M8.1 chain legs: every stop pays on the spot (mid legs via 'legDone',
+    // the final stop via 'delivered'); chain completion celebrates above.
+    const deliverLeg = (o) => {
       this.floatText(
         o.customer.x, o.customer.y - 48,
         t('pop.pay', { n: o.pay, word: o.tier.word }), o.tier.color,
@@ -145,6 +146,21 @@ export default class GameScene extends Phaser.Scene {
       );
       this.score.deliver(o.pay);
       this.playSfx('sfx-coin');
+      if (o.nextStop) {
+        this.floatText(this.glopi.x, this.glopi.y - 64, t('pop.next'), '#66d9e8');
+      }
+    };
+    this.orders.on('legDone', deliverLeg);
+    this.orders.on('delivered', deliverLeg);
+    this.orders.on('chainDone', (o) => {
+      this.time.delayedCall(380, () => {
+        if (!this.scene.isActive('Game')) return;
+        this.floatText(
+          this.glopi.x, this.glopi.y - 72,
+          t('pop.chain', { n: o.chainPay }), '#ffd75e', { size: 23 }
+        );
+        this.playSfx('sfx-blip');
+      });
     });
     this.orders.on('expired', (o) => {
       this.floatText(o.customer.x, o.customer.y - 48, t('pop.lost'), '#ff5e8b');

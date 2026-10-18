@@ -59,6 +59,8 @@ export const ORDER = {
   timePerTile: 0.55, // s per tile of route (≈2.5x straight-line cruise)
   tipMax: 2.0, // max tip at full time left = fare × tipMax
   respawnDelay: 1.6, // s before the next order appears
+  chain2Chance: 0.35, // chance an order continues to a 2nd stop (M8.1)
+  chain3Chance: 0.5, // chance a 2-stop chain extends to a 3rd (so ~17.5% are 3-leg)
 };
 
 /** Zone render palette (pulsing rings + beacon arrow). */

@@ -35,6 +35,7 @@ const DICTIONARIES = {
     'hud.delivery1': 'entrega',
     'hud.deliveryN': 'entregas',
     'hud.streak': 'racha x{n}',
+    'hud.stop': 'PARADA {i}/{n}',
     'hud.hint': 'W acelera · S frena · A/D virar · frena en el círculo para recoger/entregar · MAYÚS campana · H debug · ESC = menú',
     // popups
     'pop.newOrder': '¡NUEVO PEDIDO!',
@@ -45,6 +46,8 @@ const DICTIONARIES = {
     'pop.near': '¡CASI! +€{n}{streak}',
     'pop.cashLose': '−€{n} ¡AY!',
     'pop.ding': '¡DING!',
+    'pop.next': '¡SIGUIENTE PARADA!',
+    'pop.chain': '¡CADENA COMPLETA! +€{n}',
     // tip tier words
     'tier.word.fast': '¡RÁPIDO!',
     'tier.word.ok': 'BIEN',
@@ -87,6 +90,7 @@ const DICTIONARIES = {
     'hud.delivery1': 'comanda',
     'hud.deliveryN': 'comandes',
     'hud.streak': 'ratxa x{n}',
+    'hud.stop': 'PARADA {i}/{n}',
     'hud.hint': 'W accelerar · S frenar · A/D girar · frena dins el cercle per recollir/entregar · MAJÙS campana · H debug · ESC = menú',
     // popups
     'pop.newOrder': 'COMANDA NOVA!',
@@ -97,6 +101,8 @@ const DICTIONARIES = {
     'pop.near': 'GAIREBÉ! +€{n}{streak}',
     'pop.cashLose': '−€{n} AI!',
     'pop.ding': 'DING!',
+    'pop.next': 'SEGÜENT PARADA!',
+    'pop.chain': 'CADENA COMPLETADA! +€{n}',
     // tip tier words
     'tier.word.fast': 'RAPIDÍSSIM!',
     'tier.word.ok': 'BÉ',
@@ -139,6 +145,7 @@ const DICTIONARIES = {
     'hud.delivery1': 'delivery',
     'hud.deliveryN': 'deliveries',
     'hud.streak': 'combo x{n}',
+    'hud.stop': 'STOP {i}/{n}',
     'hud.hint': 'W pedal · S brake · A/D steer · stop in the circle to pick up/deliver · SHIFT bell · H debug · ESC = menu',
     // popups
     'pop.newOrder': 'NEW ORDER!',
@@ -149,6 +156,8 @@ const DICTIONARIES = {
     'pop.near': 'CLOSE ONE! +€{n}{streak}',
     'pop.cashLose': '−€{n} OW!',
     'pop.ding': 'DING!',
+    'pop.next': 'NEXT STOP!',
+    'pop.chain': 'CHAIN COMPLETE! +€{n}',
     // tip tier words
     'tier.word.fast': 'FAST!',
     'tier.word.ok': 'NICE',

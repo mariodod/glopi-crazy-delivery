@@ -1,9 +1,13 @@
 /**
- * Orders core loop (M3) — plain JS, decoupled from Phaser so
+ * Orders core loop (M3, chains M8.1) — plain JS, decoupled from Phaser so
  * unit tests can run it headlessly (node, vitest later).
  *
  * State machine:  (none) → offered → active → delivered | expired
- * Events:         'spawned', 'accepted', 'delivered', 'expired'
+ * An order is now 1–3 chained stops: a restaurant pickup, then customers
+ * back-to-back. Each delivered stop pays immediately and re-arms the clock
+ * for the next leg; walking away lets it expire mid-chain.
+ * Events:         'spawned', 'accepted', 'legDone', 'delivered',
+ *                 'chainDone', 'expired'
  *                 (each emits the order object as payload)
  */
 import { t } from '../i18n.js';
@@ -40,7 +44,9 @@ export class OrderSystem {
     this.handlers = {
       spawned: new Set(),
       accepted: new Set(),
+      legDone: new Set(),
       delivered: new Set(),
+      chainDone: new Set(),
       expired: new Set(),
     };
     this.reset();
@@ -96,37 +102,74 @@ export class OrderSystem {
     }
   }
 
-  /** New offered order at a random restaurant, riding to a far customer. */
+  /** One chained stop: customer + its route stats measured from `from`. */
+  makeStop(point, from, cfg) {
+    const routePx = dist(point.x, point.y, from);
+    const tiles = routePx / 32;
+    return {
+      x: point.x,
+      y: point.y,
+      name: point.name,
+      note: point.note,
+      routePx: Math.round(routePx),
+      fare: Math.max(3, Math.round(cfg.fareBase + tiles * cfg.farePerTile)),
+      timeTotal: cfg.timeBase + tiles * cfg.timePerTile,
+    };
+  }
+
+  /** New offered order: a restaurant ride with 1–3 chained customer stops. */
   spawnOrder() {
     const cfg = this.cfg;
     const r = this.pick(this.restaurants, (p) => p.name !== this.lastRestaurant);
     this.lastRestaurant = r.name;
 
-    // Sample a few customers and keep the farthest one so the fare scale
-    // feels like a real ride, not a 2-tile hop.
-    let best = null;
-    let bestD = 0;
-    for (let i = 0; i < 4; i++) {
-      const c = this.pick(this.customers);
-      const d = dist(c.x, c.y, r);
-      if (d > bestD) {
-        bestD = d;
-        best = c;
-      }
+    // How far does the chain go? 35% get a 2nd stop; conditional 50% of those
+    // get a 3rd (≈ an 18% chance of the full triple).
+    let legCount = 1;
+    if (this.rng() < cfg.chain2Chance) {
+      legCount = this.rng() < cfg.chain3Chance ? 3 : 2;
     }
 
-    const fare = Math.max(3, Math.round(cfg.fareBase + (bestD / 32) * cfg.farePerTile));
+    // Each leg samples a few customers and keeps the farthest from the
+    // previous stop, so every leg feels like a real ride, not a 2-tile hop.
+    const legs = [];
+    const used = [];
+    let from = r;
+    for (let i = 0; i < legCount; i++) {
+      let best = null;
+      let bestD = 0;
+      for (let s = 0; s < 4; s++) {
+        const c = this.pick(this.customers, (p) => !used.includes(p));
+        const d = dist(c.x, c.y, from);
+        if (d > bestD) {
+          bestD = d;
+          best = c;
+        }
+      }
+      used.push(best);
+      legs.push(this.makeStop(best, from, cfg));
+      from = best;
+    }
+
+    // While offered, the card teases the FULL chain fare; once accepted the
+    // HUD switches to the current leg (passed via this.current.legs/legIndex).
+    const fare = legs.reduce((sum, leg) => sum + leg.fare, 0);
+    const routePx = legs.reduce((sum, leg) => sum + leg.routePx, 0);
     this.current = {
       id: ++this.orderSeq,
       state: 'offered',
       restaurant: { ...r },
-      customer: { ...best },
-      routePx: Math.round(bestD),
+      legs,
+      legIndex: 0,
+      legCount: legs.length,
+      customer: legs[0], // current stop; advances at every delivery
+      routePx,
       fare,
-      timeTotal: cfg.timeBase + (bestD / 32) * cfg.timePerTile,
-      timeLeft: 0, // set below
+      timeTotal: legs[0].timeTotal,
+      timeLeft: 0, // set at accept (the clock freezes while offered)
       tip: 0,
       pay: 0,
+      chainPay: 0,
     };
     this.current.timeLeft = this.current.timeTotal;
     this.emit('spawned', this.current);
@@ -139,26 +182,47 @@ export class OrderSystem {
     if (!o || o.state !== 'offered') return false;
     if (dist(px, py, o.restaurant) > this.cfg.pickupRadius) return false;
     o.state = 'active';
+    o.timeLeft = o.legs[0].timeTotal;
     this.emit('accepted', o);
     return true;
   }
 
-  /** Reaching the customer zone with the bag auto-completes. */
+  /** Reaching the current stop's zone with the bag auto-completes that leg. */
   tryDeliver(px, py) {
     const o = this.current;
     if (!o || o.state !== 'active') return false;
     if (dist(px, py, o.customer) > this.cfg.dropRadius) return false;
-    o.tip = Math.round(o.fare * this.cfg.tipMax * (o.timeLeft / o.timeTotal));
-    o.pay = o.fare + o.tip;
-    o.state = 'delivered';
+
+    const stop = o.customer;
     const tier = tipTier(o.timeLeft / o.timeTotal);
-    o.tip = Math.round(o.fare * this.cfg.tipMax * tier.mult);
-    o.pay = o.fare + o.tip;
+    o.tip = Math.round(stop.fare * this.cfg.tipMax * tier.mult);
+    o.pay = stop.fare + o.tip;
     o.tier = tier;
-    this.current = null;
-    this.totalDelivered += 1;
-    this.respawnIn = this.cfg.respawnDelay;
-    this.emit('delivered', o);
+    o.chainPay += o.pay;
+    this.totalDelivered += 1; // every stop served counts as a delivery
+
+    if (o.legIndex < o.legCount - 1) {
+      // mid-chain: pay this leg, then the next stop becomes the target with
+      // a fresh clock (handlers run before the reset clears this leg's fields)
+      o.nextStop = true;
+      o.state = 'active';
+      this.emit('legDone', o);
+      if (this.current !== o) return true; // a handler ended the shift
+      o.legIndex += 1;
+      o.customer = o.legs[o.legIndex];
+      o.timeTotal = o.customer.timeTotal;
+      o.timeLeft = o.timeTotal;
+      o.tip = 0;
+      o.pay = 0;
+    } else {
+      o.nextStop = false;
+      o.state = 'delivered';
+      if (this.current !== o) return true; // a handler ended the shift
+      this.current = null;
+      this.respawnIn = this.cfg.respawnDelay;
+      this.emit('delivered', o);
+      if (o.legCount > 1) this.emit('chainDone', o);
+    }
     return true;
   }
 
