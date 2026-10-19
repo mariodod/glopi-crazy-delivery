@@ -33,7 +33,7 @@ export const CAMERA = {
 
 export const IMPACT = {
   minImpulse: 100, // px/s of speed for an impact to count
-  restitution: 0.35, // bounce coefficient
+  scrapeKeep: 0.92, // tangential speed kept on a wall hit — no ricochet
   cooldown: 220, // ms between impact effects
   sparks: 8, // particles per burst
 };

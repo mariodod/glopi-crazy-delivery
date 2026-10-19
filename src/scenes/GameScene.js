@@ -285,8 +285,11 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Collide callback (walls + sea). Bounces the model velocity along the
-   * dominant contact normal and fires FX; arcade already resolved overlap.
+   * Collide callback (walls + sea). A wall hit bleeds speed instead of
+   * bouncing off (v1.1.1 feedback): the into-wall component dies so the
+   * bike decelerates to a stop, and an angled scrape keeps gliding in its
+   * original direction with the direction never reversed. FX still fires;
+   * heading is untouched, so only the player steers away from the wall.
    */
   onWallHit() {
     const blocked = this.glopi.body.blocked;
@@ -296,15 +299,12 @@ export default class GameScene extends Phaser.Scene {
       return;
     }
     this.lastImpact = now;
-    if (blocked.up) this.vel.y = Math.abs(this.vel.y) * IMPACT.restitution;
-    if (blocked.down) this.vel.y = -Math.abs(this.vel.y) * IMPACT.restitution;
-    if (blocked.left) this.vel.x = Math.abs(this.vel.x) * IMPACT.restitution;
-    if (blocked.right) this.vel.x = -Math.abs(this.vel.x) * IMPACT.restitution;
-
-    // Realign heading with the outgoing velocity (bounce forward, not sideways).
-    if (this.vel.length() > 20) {
-      this.heading = this.vel.angle();
-    }
+    if (blocked.up) this.vel.y = 0;
+    if (blocked.down) this.vel.y = 0;
+    if (blocked.left) this.vel.x = 0;
+    if (blocked.right) this.vel.x = 0;
+    // scraping rubs off a bit of tangential speed — no bounce, no turn
+    this.vel.scale(IMPACT.scrapeKeep);
 
     this.sparks.explode(IMPACT.sparks, this.glopi.x, this.glopi.y);
     this.cameras.main.shake(70, 0.003);
