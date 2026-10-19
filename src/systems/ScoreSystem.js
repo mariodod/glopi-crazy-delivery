@@ -41,6 +41,7 @@ export class ScoreSystem {
     this.earnedFromMisses = 0; // total bonuses earned from near misses
     this.penalties = 0; // total € actually paid out on crashes
     this.deliveries = 0;
+    this.bonusSeconds = 0; // seconds added back by good deliveries (v1.1.2)
     this.shiftLeft = this.cfg.shiftLength ?? 60;
     this.shiftOver = false;
   }
@@ -116,11 +117,22 @@ export class ScoreSystem {
     return amount;
   }
 
-  /** Delivery pay lands in the wallet (fare + tip from OrderSystem). */
-  deliver(pay) {
+  /**
+   * Delivery pay lands in the wallet (fare + tip) and a good delivery hands
+   * seconds back (v1.1.2): the tip tier decides the bonus from
+   * SCORE.deliveryBonus, extending the shift. `tierKey` is the tip tier
+   * ('GREEN'…'RED'); unknown/omitted tiers just pay, no bonus.
+   */
+  deliver(pay, tierKey) {
     this.deliveries += 1;
     this.money += pay;
-    this.emit('deliver', { pay });
+    const table = this.cfg.deliveryBonus;
+    const bonus = (tierKey && table?.[tierKey.toLowerCase()]) || 0;
+    if (bonus > 0) {
+      this.shiftLeft += bonus;
+      this.bonusSeconds += bonus;
+    }
+    this.emit('deliver', { pay, bonus, tierKey });
     return pay;
   }
 

@@ -6313,16 +6313,6 @@
      ]
     },
     {
-     "id": 22,
-     "properties": [
-      {
-       "name": "collides",
-       "type": "bool",
-       "value": true
-      }
-     ]
-    },
-    {
      "id": 12,
      "properties": [
       {
@@ -6337,6 +6327,16 @@
      "properties": [
       {
        "name": "collides",
+       "type": "bool",
+       "value": true
+      }
+     ]
+    },
+    {
+     "id": 22,
+     "properties": [
+      {
+       "name": "tree",
        "type": "bool",
        "value": true
       }

@@ -146,6 +146,11 @@ export const GAMEPAD = {
   bellBtn: 2, // X / Square
 };
 
+/** Initial map/prop shaping (v1.1.2). */
+export const WORLD = {
+  treeBody: 18, // px square static body for trees (was a full 32 px tile box)
+};
+
 /**
  * Scoring (M5). One wallet for the whole shift: near-miss bonuses chain
  * into a streak multiplier, delivery pay lands here, crash penalties burn.
@@ -158,4 +163,5 @@ export const SCORE = {
   multMax: 3, // bonus multiplier cap
   shiftLength: 60, // s — a full Glopo shift (v1.1.1: was 180)
   grades: { S: 22, A: 15, B: 9, C: 4 }, // rescaled for the 60 s shift
+  deliveryBonus: { green: 9, yellow: 5, orange: 2, red: 0 }, // s added per delivered stop by tip tier
 };

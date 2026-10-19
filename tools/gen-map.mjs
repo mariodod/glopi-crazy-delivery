@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 import { mulberry32 } from './lib/png.mjs';
-import { T, COLLIDES, TILESET_NAME, gid } from './tiles.mjs';
+import { T, COLLIDES, SLIM_PROPS, TILESET_NAME, gid } from './tiles.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = join(ROOT, 'assets', 'tilemaps', 'barcelona.json');
@@ -326,10 +326,16 @@ const map = {
       image: '../tilesets/city.png',
       imagewidth: 512,
       imageheight: 64,
-      tiles: [...COLLIDES].map((t) => ({
-        id: t,
-        properties: [{ name: 'collides', type: 'bool', value: true }],
-      })),
+      tiles: [
+        ...[...COLLIDES].map((t) => ({
+          id: t,
+          properties: [{ name: 'collides', type: 'bool', value: true }],
+        })),
+        ...[...SLIM_PROPS].map((t) => ({
+          id: t,
+          properties: [{ name: 'tree', type: 'bool', value: true }],
+        })),
+      ],
     },
   ],
 };

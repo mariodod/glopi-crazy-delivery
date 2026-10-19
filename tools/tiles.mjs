@@ -23,12 +23,18 @@ export const T = {
 };
 
 /** Tiles that stop the bike (set as `collides` property in the map JSON).
- *  Water too — Glopi doesn't swim. Lamps & benches are knobs to knock over later (M4), not walls. */
+ *  Water too — Glopi doesn't swim. Lamps & benches are knobs to knock over later (M4), not walls.
+ *  Trees are NOT here (v1.1.2): a full-tile box clipped way too hard, so
+ *  they carry a `tree` marker property and the Game scene builds slimmer
+ *  static bodies for them at spawn. */
 export const COLLIDES = new Set([
   T.BUILDING_A, T.BUILDING_B, T.BUILDING_C, T.BUILDING_D,
-  T.FOUNTAIN, T.PALM, T.TREE,
+  T.FOUNTAIN, T.PALM,
   T.WATER0, T.WATER1,
 ]);
+
+/** Prop tiles swapped from tile collision to a slim runtime body. */
+export const SLIM_PROPS = new Set([T.TREE]);
 
 export const TILESET_NAME = 'city';
 

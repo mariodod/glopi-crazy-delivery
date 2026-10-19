@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD,
+  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD, WORLD,
 } from '../config.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
@@ -50,6 +50,22 @@ export default class GameScene extends Phaser.Scene {
 
     this.physics.add.collider(this.glopi, this.wallLayer, this.onWallHit, null, this);
     this.physics.add.collider(this.glopi, this.groundLayer, this.onWallHit, null, this); // sea edges
+
+    // v1.1.2: trees no longer collide as a full 32px tile (canopies clipped
+    // way too aggressively) — each tree gets a small centered static body
+    this.treeBodies = this.wallLayer
+      .filterTiles((tile) => tile.properties && tile.properties.tree)
+      .map((tile) => {
+        const size = WORLD.treeBody;
+        const zone = this.add.zone(
+          tile.pixelX + tile.width / 2,
+          tile.pixelY + tile.height / 2,
+          size, size,
+        );
+        this.physics.add.existing(zone, true);
+        return zone;
+      });
+    this.physics.add.collider(this.glopi, this.treeBodies, this.onWallHit, null, this);
 
     this.cameras.main.setBounds(0, 0, this.map.widthInPixels, this.map.heightInPixels);
     this.cameras.main.startFollow(this.glopi, true, 0.08, 0.08);
@@ -121,6 +137,15 @@ export default class GameScene extends Phaser.Scene {
     // ---- Scoring (M5) — the single wallet -------------------------------
     this.score = new ScoreSystem(SCORE);
     this.score.on('shiftEnd', (snap) => this.endShift(snap));
+    // v1.1.2: a good delivery pays seconds back — show it above the payday
+    this.score.on('deliver', ({ bonus }) => {
+      if (bonus > 0) {
+        this.floatText(
+          this.glopi.x, this.glopi.y - 84,
+          `+${bonus}s`, '#7de695',
+        );
+      }
+    });
 
     // ---- Orders core loop (M3) -------------------------------------------
     this.orders = new OrderSystem({
@@ -142,7 +167,7 @@ export default class GameScene extends Phaser.Scene {
         t('pop.pay', { n: o.pay, word: o.tier.word }), o.tier.color,
         { size: 23 } // the payday gets the biggest pop
       );
-      this.score.deliver(o.pay);
+      this.score.deliver(o.pay, o.tier.key);
       this.playSfx('sfx-coin');
       if (o.nextStop) {
         this.floatText(this.glopi.x, this.glopi.y - 64, t('pop.next'), '#66d9e8');
