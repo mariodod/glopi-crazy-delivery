@@ -205,15 +205,32 @@ for (let by = 0; by < 6; by++) {
 
 /* ---------- 6. crosswalks around every normal intersection ---------- */
 
+// The Diagonal meets the grid as plain merged asphalt: crosswalk bands
+// that would reach into the wide avenue connect avenue-to-avenue with no
+// sidewalk on the far side, so any band with a cell inside the 5-tile
+// swath (plus one cushion column) is skipped.
+const nearDiagonal = (x, y) =>
+  y >= 0 && y < CITY_ROWS && Math.abs(x - diagCenter(y)) <= 3;
+
 for (const s of V_STREETS) {
   if (inRambla(s) || inRambla(s + 1)) continue; // Rambla is pedestrian
   for (const r of H_STREETS) {
     for (const y of [r - 1, r + 2]) {
       if (y < 0 || y >= CITY_ROWS || isStreetRow(y)) continue;
+      let reachesDiagonal = false;
+      for (let x = s; x <= s + 1; x++) {
+        if (nearDiagonal(x, y)) reachesDiagonal = true;
+      }
+      if (reachesDiagonal) continue;
       for (let x = s; x <= s + 1; x++) set(ground, x, y, T.CROSS_Y);
     }
     for (const x of [s - 1, s + 2]) {
       if (x < 0 || x >= COLS || isStreetCol(x)) continue;
+      let reachesDiagonal = false;
+      for (let y = r; y <= r + 1; y++) {
+        if (nearDiagonal(x, y)) reachesDiagonal = true;
+      }
+      if (reachesDiagonal) continue;
       for (let y = r; y <= r + 1; y++) set(ground, x, y, T.CROSS_X);
     }
   }
