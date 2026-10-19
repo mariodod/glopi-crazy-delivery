@@ -57,6 +57,30 @@ export class TrafficSystem {
       });
     }
 
+    // Diagonal avenue (v1.1.3): the swath sweeps from (col 52, row 2) to
+    // (col 16, row 39); its centerline in px is diagCenter(y) = 1680 −
+    // (y − 80)·36/37 (xOf 1680 = col 52 center @ row-2 line, 528 = col 16
+    // center @ row-39 line). `along` parametrizes by y; `offX/offY` push
+    // each direction onto its right-hand side, ±16 px off the median.
+    const tangent = { x: -36 / Math.hypot(36, 37), y: 37 / Math.hypot(36, 37) };
+    const rightOf = (t) => ({ x: -t.y * 16, y: t.x * 16 }); // screen right = −90°
+    const offSSW = rightOf(tangent);        // dir +1 (down-left) rides the NW side
+    const offNNE = rightOf({ x: -tangent.x, y: -tangent.y }); // dir −1 … SE side
+    this.diagCenter = (y) => 1680 - (y - 80) * (36 / 37);
+    // arcK = arc-length per +1 px of y — dividing by it makes `speed` the
+    // true screen speed (same tuning language as the h/v lanes)
+    const arcK = Math.hypot(36, 37) / 37;
+    this.carLanes.push({
+      axis: 'd', dir: 1, lo: 80, hi: 1264,
+      offX: offSSW.x, offY: offSSW.y,
+      arcK, tx: tangent.x, ty: tangent.y,
+    });
+    this.carLanes.push({
+      axis: 'd', dir: -1, lo: 80, hi: 1264,
+      offX: offNNE.x, offY: offNNE.y,
+      arcK, tx: tangent.x, ty: tangent.y, // dir folds the flip into δalong
+    });
+
     this.pedLanes = [];
     for (const r of H_STREETS) {
       // sidewalks bordering the street pair (r-1 and r+2 are block rings)
@@ -99,7 +123,32 @@ export class TrafficSystem {
         sway: type === 'scooter' ? this.randBetween([4, 8]) : this.randBetween([2, 4]),
         lastNearMiss: -1e9,
       });
-      this.applyLane(cars[i], along, 0);
+      this.applyLane(cars[i], along);
+    }
+    // v1.1.3: keep the flagship avenue alive — grid roulette usually starves
+    // the long Diagonal, so dedicate one car + one scooter to its two lanes
+    for (let k = 0; k < T.diagonalCars; k++) {
+      const dLanes = this.carLanes.filter((l) => l.axis === 'd');
+      const type = k % 2 === 0 ? 'car' : 'scooter';
+      const lane = dLanes[k % dLanes.length];
+      const speed = type === 'car'
+        ? this.randBetween(T.carSpeed)
+        : this.randBetween(T.scooterSpeed);
+      const along = lane.lo + this.rng() * (lane.hi - lane.lo);
+      cars.push({
+        type,
+        lane,
+        speed,
+        tintIndex: Math.floor(this.rng() * T.palette.length),
+        along,
+        x: 0,
+        y: 0,
+        wobble: 0,
+        swayPhase: this.rng() * Math.PI * 2,
+        sway: type === 'scooter' ? this.randBetween([4, 8]) : this.randBetween([2, 4]),
+        lastNearMiss: -1e9,
+      });
+      this.applyLane(cars[cars.length - 1], along);
     }
     return cars;
   }
@@ -109,9 +158,17 @@ export class TrafficSystem {
     if (car.lane.axis === 'h') {
       car.x = along;
       car.y = car.lane.pos + car.wobble; // sway is perpendicular, non-accumulating
-    } else {
+    } else if (car.lane.axis === 'v') {
       car.x = car.lane.pos + car.wobble;
       car.y = along;
+    } else {
+      // Diagonal: along runs down the centerline; clamping keeps the parked
+      // extension straight past both avenue ends instead of drifting off-path
+      const y = along < car.lane.lo ? car.lane.lo : along > car.lane.hi ? car.lane.hi : along;
+      car.x = this.diagCenter(y) + car.lane.offX + (car.wobble * 0.6);
+      car.y = along + car.lane.offY;
+      car.along = along;
+      return;
     }
     car.along = along;
   }
@@ -157,7 +214,7 @@ export class TrafficSystem {
   update(dt, probe) {
     const T = this.traffic;
     for (const car of this.cars) {
-      car.along += car.lane.dir * car.speed * dt;
+      car.along += car.lane.dir * car.speed * dt / (car.lane.arcK || 1);
       if (car.along < -T.wrapMargin) car.along = car.lane.hi + T.wrapMargin;
       else if (car.along > car.lane.hi + T.wrapMargin) car.along = -T.wrapMargin;
       car.wobble = Math.sin(performance.now() / 320 + car.swayPhase) * car.sway;
@@ -226,8 +283,18 @@ export class TrafficSystem {
       const d = Math.hypot(probe.x - car.x, probe.y - car.y);
       if (d > T.nearMissRadius) continue;
       if (probe.speed < 120) continue; // only counts while riding
-      const carVx = car.lane.axis === 'h' ? car.lane.dir * car.speed : 0;
-      const carVy = car.lane.axis === 'v' ? car.lane.dir * car.speed : 0;
+      let carVx = 0;
+      let carVy = 0;
+      if (car.lane.axis === 'h') {
+        carVx = car.lane.dir * car.speed;
+      } else if (car.lane.axis === 'v') {
+        carVy = car.lane.dir * car.speed;
+      } else {
+        // Diagonal: normalized tangent units on the lane make this velocity
+        // exactly `speed` px/s along the path (same scale as h/v lanes)
+        carVx = car.lane.dir * car.speed * car.lane.tx;
+        carVy = car.lane.dir * car.speed * car.lane.ty;
+      }
       const relV = Math.hypot(carVx - probe.vx, carVy - probe.vy);
       if (relV < T.nearMissRelSpeed) continue;
       const now = performance.now();

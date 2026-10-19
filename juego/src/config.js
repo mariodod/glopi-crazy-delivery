@@ -79,6 +79,7 @@ export const TRAFFIC = {
   world: { w: 2048, h: 1536 },
   carCount: 8,
   scooterCount: 5,
+  diagonalCars: 2, // cars kept on the Av. Diagonal lanes (v1.1.3)
   carSpeed: [130, 180], // px/s
   scooterSpeed: [85, 160],
   palette: [0xc0392b, 0x3466b3, 0xf1c40f, 0xe8e8e8],

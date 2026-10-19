@@ -75,6 +75,7 @@ export class ScoreSystem {
       nearMisses: this.nearMisses,
       bonuses: this.earnedFromMisses,
       penalties: this.penalties,
+      bonusSeconds: this.bonusSeconds,
     };
   }
 

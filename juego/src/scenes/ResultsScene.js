@@ -66,6 +66,10 @@ export default class ResultsScene extends Phaser.Scene {
       t('res.streak', { n: data.bestStreak }),
       t('res.nearMiss', { n: data.nearMisses }),
     ];
+    // v1.1.3: surface the clock the player earned back through deliveries
+    if (data.bonusSeconds > 0) {
+      rows.push(t('res.timeBonus', { n: Math.round(data.bonusSeconds) }));
+    }
     this.add
       .text(cx + 60, 196, rows.join('\n'), { ...MONO, fontSize: '22px', color: '#e9e9f5', align: 'left', lineSpacing: 10 })
       .setOrigin(0, 0);

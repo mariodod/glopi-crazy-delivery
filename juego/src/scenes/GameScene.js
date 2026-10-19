@@ -750,8 +750,16 @@ export default class GameScene extends Phaser.Scene {
     this.traffic.cars.forEach((car, i) => {
       const sprite = this.carSpriteList[i];
       sprite.setPosition(car.x, car.y);
-      const vx = car.lane.axis === 'h' ? car.lane.dir * car.speed : 0;
-      const vy = car.lane.axis === 'v' ? car.lane.dir * car.speed : 0;
+      let vx = 0;
+      let vy = 0;
+      if (car.lane.axis === 'h') {
+        vx = car.lane.dir * car.speed;
+      } else if (car.lane.axis === 'v') {
+        vy = car.lane.dir * car.speed;
+      } else {
+        vx = car.lane.dir * car.speed * car.lane.tx;
+        vy = car.lane.dir * car.speed * car.lane.ty;
+      }
       sprite.body.velocity.set(vx, vy);
       sprite.rotation = Math.atan2(vy, vx);
     });

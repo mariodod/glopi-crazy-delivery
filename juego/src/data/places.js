@@ -10,7 +10,7 @@
 export const RESTAURANTS = [
   { name: 'Bar Locutorio Paco', dish: 'bocata mixto', x: 272, y: 272 },
   { name: 'La Parranda Vegan', dish: 'kale con instead-of-plátano', x: 656, y: 80 },
-  { name: 'Pizza Catalana Nostra', dish: 'pizza baratas nadadoras', x: 1424, y: 272 },
+  { name: 'Pizza Catalana Nostra', dish: 'pizza baratas nadadoras', x: 1392, y: 272 },
   { name: 'El Rincón del Huevo Frito', dish: 'tres huevos dobles', x: 272, y: 848 },
   { name: 'Sushi Diagonal', dish: 'salmon moodon', x: 1616, y: 464 },
   { name: 'Bocadillos Rajoli', dish: 'calamari borracho', x: 1424, y: 1040 },
