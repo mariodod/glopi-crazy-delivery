@@ -161,6 +161,12 @@ glopi-crazy-delivery/
 - [x] Housekeeping — package.json `version` 1.1.0 → 1.1.1; headless suites re-run (career 22 + touch 16 green; m81's chain-distribution probe flipped on its documented known-flaky 200-sample tally — 2-legs/3-legs are equal-chance 0.175/0.175, binomial noise); full live drill after deploy: boot → sprint → car-hit eject → delivery → results → ESC, zero console errors
 - **Exit criteria**: player-reported feel issues all fixed with E2E evidence; map art verified visually; no functional regressions. ✔
 
+### M11 — v1.1.2 reward loop round ✅ done
+- [x] Deliveries pay seconds back (`feat`) — every delivered stop hands extra shift time based on how well it went, reusing the tip-tier verdict ALREADY shown on the payday pop (`o.tier` = the tipTier of `timeLeft/timeTotal`): GREEN +9 s, YELLOW +5 s, ORANGE +2 s, RED 0 (no payoff for scraping in). `ScoreSystem.deliver(pay, tierKey)` reads `SCORE.deliveryBonus`, adds to `shiftLeft` (the HUD timer picks it up the next frame) and tracks `bonusSeconds`; GameScene floats `+9s` in tip-green above the bike. This builds a real reward loop into the short shift: keep deposits GREEN to play longer, chain multi-legs to bank more of them. E2E (shift clock frozen per measurement): ratio 1.0 → `GREEN, +9.0 s`; 0.45 → `YELLOW, +5.0`; 0.20 → `ORANGE, +2.0`; 0.10 → `RED, +0.0`; cumulative `bonusSeconds` 16 after the four staged deliveries
+- [x] Trees get slim hitboxes (`feat`) — tilemap collision made tree cell a full 32 px box, and the visible canopy reads way smaller than a tile, so scrapes clipped air. Trees left `COLLIDES` (they now carry a `tree: true` tileset property instead) and the Game scene builds one small static 18 px square per tree (`WORLD.treeBody`) with the same `onWallHit` treatment. E2E: `wallLayer.filterTiles(tree)` finds the 11 trees; a 140 px/s head-on run stops a clean 5 px shy-of-tile (tile-edge − bike halfW 12 − box inset 7) with `blocked.right` set the same frame and impact FX fired; headless m82 22 asserts green; map re-regenerated (tileset `tiles` array only — layer data unchanged)
+- [x] Housekeeping — package.json `version` 1.1.2; `unused-check` clean at 58 i18n keys / 83 config fields; m83 touch 16 green; m81 logic 33 green with its documented tally flake; console zero errors throughout
+- **Exit criteria**: reward loop feels like a reason to keep the city clean, prop hitboxes match their art; deploy + live drill. ✔ *(live drill below after deploy)*
+
 ## 7. Risks & Anti-Goals
 
 **Risks**
