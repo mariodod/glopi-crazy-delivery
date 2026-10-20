@@ -2,10 +2,11 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD, WORLD,
+  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD, WORLD, DRAFT,
 } from '../config.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
+import { DraftSystem } from '../systems/DraftSystem.js';
 import { applyDifficulty, resolveDifficulty } from '../data/difficulties.js';
 import { t } from '../i18n.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
@@ -87,7 +88,11 @@ export default class GameScene extends Phaser.Scene {
     this.skidGfx = this.add.graphics().setDepth(4);
     this.skidMarks = []; // { x, y, a, t } pairs of wheel marks
     this.skidClock = 0;
-    this.hopT = 0; // s left of the current take-off hop
+    this.hopT = 0; // s left of the current t
+
+    // slipstream (v1.2): wake sensor + the graded boost bar above the bike
+    this.draft = new DraftSystem(DRAFT);
+    this.draftGfx = this.add.graphics().setDepth(31);
     this.hopCd = 0; // s until the next hop may fire
     this.ragdollUntil = 0; // ms timestamp: tumble window end
     this.dazeUntil = 0; // ms timestamp: input blackout end
@@ -698,9 +703,17 @@ export default class GameScene extends Phaser.Scene {
     let forward = this.vel.dot(h);
     let lateral = this.vel.dot(p);
 
+    // 2.5) slipstream probe: fills in a car's wake, graded cap+throttle
+    this.draftProbe = this.draft.update(
+      { x: this.glopi.x, y: this.glopi.y, heading: this.heading },
+      this.traffic.cars,
+      dt,
+    );
+    const draftCap = DRAFT.maxBonus * this.draftProbe.meter; // px/s cap raise
+
     // 3) throttle / brake / reverse
     if (pedaling && !braking) {
-      forward += V.throttle * dt;
+      forward += (V.throttle + DRAFT.accelBonus * this.draftProbe.meter) * dt;
     } else if (braking) {
       forward -= (forward > 0 ? V.brake : V.throttle) * dt;
       if (forward < -V.reverseMax) forward = -V.reverseMax;
@@ -709,7 +722,7 @@ export default class GameScene extends Phaser.Scene {
       forward -= sense * V.coastDrag * dt;
       if (Math.sign(forward) !== sense) forward = 0;
     }
-    forward = Phaser.Math.Clamp(forward, -V.reverseMax, V.maxSpeed);
+    forward = Phaser.Math.Clamp(forward, -V.reverseMax, V.maxSpeed + draftCap);
 
     // 4) lateral slip damps out (grip) and bleeds speed while sliding
     lateral *= Math.exp(-V.grip * dt);
@@ -720,6 +733,27 @@ export default class GameScene extends Phaser.Scene {
     this.vel.set(h.x * forward + p.x * lateral, h.y * forward + p.y * lateral);
 
     this.glopi.body.velocity.set(this.vel.x, this.vel.y);
+
+    // slipstream FX: bar above the bike, spark wake, full-meter shout
+    {
+      const d = this.draftProbe;
+      this.draftGfx.clear();
+      if (d.meter > 0.04) {
+        this.draftGfx.fillStyle(0x66d9e8, 0.9);
+        this.draftGfx.fillRect(this.glopi.x - 13, this.glopi.y - 46, 26 * d.meter, 4);
+      }
+      if (d.meter > 0.55 && pedaling) {
+        this.sparks.explode(
+          1,
+          this.glopi.x - Math.cos(this.heading) * 15,
+          this.glopi.y - Math.sin(this.heading) * 15,
+        );
+      }
+      if (d.fullEdge) {
+        this.floatText(this.glopi.x, this.glopi.y - 74, t('pop.draft'), '#66d9e8');
+        this.playSfx('sfx-blip');
+      }
+    }
 
     // camera: look where you're going, zoom out at speed
     const cam = this.cameras.main;

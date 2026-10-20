@@ -25,6 +25,23 @@ export const VEHICLE = {
   driftDrag: 0.9, // forward speed bleed per px/s of lateral slip, per second
 };
 
+/**
+ * Slipstream (v1.2, the §4 draft promise): riding in a car's wake fills a
+ * meter that raises the speed cap (maxBonus) and adds acceleration while
+ * pedaling; leaving the wake drains it over meterDrain s so the sprint
+ * carries for a beat.
+ */
+export const DRAFT = {
+  followDist: 190, // px of trail distance inside the wake
+  lateralMax: 46, // px off the wake line before the slipstream breaks
+  coneDot: 0.82, // min dot(carMotion, bikeHeading) — no oncoming drafts
+  minCarSpeed: 100, // px/s; parked props don't feed the meter
+  meterFill: 0.7, // s to a full meter in the wake
+  meterDrain: 1.4, // s to bleed a full meter after leaving
+  accelBonus: 250, // px/s^2 extra throttle at full meter
+  maxBonus: 90, // px/s cap raise at full meter (300 -> 390)
+};
+
 export const CAMERA = {
   lookahead: 0.16, // camera offset = velocity * lookahead (world px)
   zoomSpan: 0.1, // zoom-out amount at top speed

@@ -49,6 +49,7 @@ const DICTIONARIES = {
     'pop.near': '¡CASI! +€{n}{streak}',
     'pop.cashLose': '−€{n} ¡AY!',
     'pop.ding': '¡DING!',
+    'pop.draft': '¡REBUJE!',
     'pop.next': '¡SIGUIENTE PARADA!',
     'pop.chain': '¡CADENA COMPLETA! +€{n}',
     // tip tier words
@@ -117,6 +118,7 @@ const DICTIONARIES = {
     'pop.near': 'GAIREBÉ! +€{n}{streak}',
     'pop.cashLose': '−€{n} AI!',
     'pop.ding': 'DING!',
+    'pop.draft': '¡A RESGUARD!',
     'pop.next': 'SEGÜENT PARADA!',
     'pop.chain': 'CADENA COMPLETADA! +€{n}',
     // tip tier words
@@ -185,6 +187,7 @@ const DICTIONARIES = {
     'pop.near': 'CLOSE ONE! +€{n}{streak}',
     'pop.cashLose': '−€{n} OW!',
     'pop.ding': 'DING!',
+    'pop.draft': 'DRAFT!',
     'pop.next': 'NEXT STOP!',
     'pop.chain': 'CHAIN COMPLETE! +€{n}',
     // tip tier words
