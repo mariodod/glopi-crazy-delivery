@@ -7,6 +7,7 @@
  * is Phaser's GlobalSoundManager.mute (set at boot + on every toggle).
  */
 const MUTE_KEY = 'glopi-mute';
+const TILT_KEY = 'glopi-tilt';
 
 export function isMuted() {
   try {
@@ -42,5 +43,61 @@ export function toggleFullscreen(game) {
     }
   } catch (_e) {
     // no fullscreen support — stay silent
+  }
+}
+
+// ---- M13.3 tilt steering preference ("glopi-tilt") ------------------------
+
+/** Coarse pointer = phones/tablets — the worlds the touch UI and tilt cover. */
+export function isTouchLike() {
+  try {
+    return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+  } catch (_e) {
+    return false;
+  }
+}
+
+/** Stored tilt pref; unset defaults to ON on touch devices. */
+export function isTiltOn() {
+  try {
+    const v = localStorage.getItem(TILT_KEY);
+    if (v != null) return v === '1';
+  } catch (_e) { /* storage unavailable */ }
+  return isTouchLike();
+}
+
+export function setTiltOn(on) {
+  try {
+    localStorage.setItem(TILT_KEY, on ? '1' : '0');
+  } catch (_e) { /* storage unavailable */ }
+}
+
+
+/**
+ * M13.3: on phones, starting a shift fullscreen-locks the canvas to
+ * landscape (browsers only allow it inside a user gesture, which is where
+ * launch() calls this from). iOS has no orientation.lock — it just gets
+ * fullscreen, or nothing where even that is unsupported; the touch UI
+ * still works everywhere, so every failure path stays silent.
+ */
+export function enterMobileFullscreen(game) {
+  if (!isTouchLike()) return;
+  try {
+    if (document.fullscreenElement) return;
+    const el = (game && game.canvas) || document.querySelector('canvas');
+    const rf = el && (el.requestFullscreen || el.webkitRequestFullscreen);
+    if (!rf) return;
+    const req = rf.call(el, el.requestFullscreen ? { navigationUI: 'hide' } : undefined);
+    const lock = () => {
+      try {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        }
+      } catch (_e) { /* iOS et al. — no lock API */ }
+    };
+    if (req && typeof req.then === 'function') req.then(lock, () => {});
+    else lock();
+  } catch (_e) {
+    // gesture rejected by the engine — the game keeps running windowed
   }
 }

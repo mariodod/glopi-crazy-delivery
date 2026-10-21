@@ -19,6 +19,10 @@ const config = {
   roundPixels: true,
   input: {
     gamepad: true,
+    // M13.3: 4 active pointers (mouse + 3 touches). Phaser ships ONE touch
+    // pointer by default, so the second finger stole pointer1 and steering
+    // while pedaling never registered (real-phone playtest).
+    activePointers: 4,
   },
   // keeps the GL framebuffer readable between frames: canvas.toDataURL /
   // drawImage stay valid for promo captures (screenshots + gameplay GIF)
@@ -34,8 +38,10 @@ const config = {
     },
   },
   scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
+    // M13.3: RESIZE (was FIT) — the canvas IS the window, so landscape
+    // phones go full-bleed with more city visible; scenes re-anchor their
+    // UI on the resize event (see syncLayout in each scene).
+    mode: Phaser.Scale.RESIZE,
   },
   scene: [BootScene, PreloadScene, MenuScene, GameScene, HUDScene, ResultsScene],
 };
