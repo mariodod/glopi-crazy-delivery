@@ -192,6 +192,8 @@ glopi-crazy-delivery/
 
 **Exit criteria**: phone findings fixed with E2E evidence, promo media matches v1.3, deploy + live drill. ✅ *(live drill below after deploy)*
 
+- [x] Live drill — deploy `30847f6` on gh-pages. The first attempt (`f341256`) nested the tree one level deep (`dist/index.html` instead of `index.html`, caught by the drill's 404 storm, fixed by rerunning the add with `GIT_WORK_TREE=dist`); landing serves the v1.3 cta-note (`... táctil o inclinando el móvil`), promo assets byte-exact (`promo/gameplay.gif` 359 628 B = the capture, `promo/shot-menu.png` 82 162 B), live `juego/src/i18n.js` has `¡REBUFO!` and zero `REBUJE` left; live game: menu stamp `v1.3 · M13 · Phaser 3.90`, `◀ MANDO: TÁCTIL ▶` row, chill shift starts (15 cars, DraftSystem probed alive, clock ticking from 5:00-ish default, W surge builds speed), forced shift end → results card (career `{shifts:1}` written then restored) → synthetic tap → restart race fires immediately into a fresh Game; console across the whole live session: one Phaser banner (info), zero errors / zero warnings
+
 ## 7. Risks & Anti-Goals
 
 **Risks**
