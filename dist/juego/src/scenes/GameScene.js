@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 
 import {
   GAME_WIDTH, GAME_HEIGHT, PLAYER, VEHICLE, CAMERA, IMPACT, DEBUG_KEY, ORDER, ZONE,
-  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD, WORLD, DRAFT,
+  TRAFFIC, PEDS, SCORE, JUICE, MUSIC, GAMEPAD, WORLD, DRAFT, TILT,
 } from '../config.js';
 import { OrderSystem } from '../systems/OrderSystem.js';
 import { TrafficSystem } from '../systems/TrafficSystem.js';
@@ -11,6 +11,8 @@ import { applyDifficulty, resolveDifficulty } from '../data/difficulties.js';
 import { t } from '../i18n.js';
 import { ScoreSystem } from '../systems/ScoreSystem.js';
 import { TouchControls } from '../systems/TouchControls.js';
+import { TiltSteer } from '../systems/TiltSteer.js';
+import { isTiltOn, isTouchLike } from '../data/settings.js';
 import { RESTAURANTS, CUSTOMERS } from '../data/places.js';
 
 /** Middle of La Rambla (cols 32-33), heading north. */
@@ -120,6 +122,8 @@ export default class GameScene extends Phaser.Scene {
     this.events.on('prerender', this.bikeVisualHook);
     this.events.once('shutdown', () => {
       this.events.off('prerender', this.bikeVisualHook);
+      this.scale.off('resize', this.syncLayout);
+      window.removeEventListener('deviceorientation', this.onOrient);
       if (this.music) {
         this.music.calm.stop();
         this.music.chaos.stop();
@@ -132,6 +136,19 @@ export default class GameScene extends Phaser.Scene {
 
     // ---- M8.3 touch controls — HUD drives the state; here we just read it
     this.touch = new TouchControls();
+    // M13.3: guarantee enough touch pointers for finger+finger play (steer
+    // and pedal at once). The boot config sets them; this guards routes
+    // that miss the config.
+    const inMgr = this.input.manager;
+    if (inMgr.pointers.length < 4) this.input.addPointer(4 - inMgr.pointers.length);
+    // M13.3 tilt steering: lean the phone while no zone is held. Non-touch
+    // devices never enable it, so desktop play is untouched.
+    this.tilt = new TiltSteer(TILT);
+    this.onOrient = (e) => this.tilt.update(e);
+    if (isTiltOn() && isTouchLike() && typeof DeviceOrientationEvent !== 'undefined') {
+      this.tilt.enabled = true;
+      window.addEventListener('deviceorientation', this.onOrient);
+    }
 
     this.input.keyboard.once('keydown-ESC', () => {
       this.scene.stop('HUD'); // overlay scene (M3.3); no-op if not running
@@ -283,7 +300,7 @@ export default class GameScene extends Phaser.Scene {
       }
     });
 
-    this.add
+    this.hintText = this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT - 26, t('hud.hint'), {
         fontFamily: 'monospace',
         fontSize: '18px',
@@ -293,6 +310,21 @@ export default class GameScene extends Phaser.Scene {
       .setScrollFactor(0)
       .setDepth(100)
       .setAlpha(0.85);
+
+    // M13.3: responsive anchors — under Scale.RESIZE the canvas IS the
+    // window, so screen-space texts re-anchor on resize and the camera
+    // never shows past the map bounds (camFloor).
+    this.syncLayout = () => {
+      this.hintText.setPosition(this.scale.width / 2, this.scale.height - 26);
+      this.debugText.setPosition(8, this.scale.height - 112);
+      this.camFloor = Math.max(
+        1,
+        this.scale.width / this.map.widthInPixels,
+        this.scale.height / this.map.heightInPixels
+      );
+    };
+    this.syncLayout();
+    this.scale.on('resize', this.syncLayout);
   }
 
   buildCity() {
@@ -680,9 +712,12 @@ export default class GameScene extends Phaser.Scene {
     const bellRising = !!gp && gp.bell && !this.padBellWas; // pad trigger edge
     this.padBellWas = !!gp && gp.bell;
 
-    // keyboard wins when pressed; otherwise the pad, then touch zones (M8.3)
+    // M13.3: keyboard wins when pressed; otherwise the pad, then the touch
+    // zones, and device tilt fills in when no zone is held (a finger on
+    // ◀ ▶ always overrides the lean)
     const steerKeys = (D.isDown || RIGHT.isDown ? 1 : 0) - (A.isDown || LEFT.isDown ? 1 : 0);
-    const steer = blockInput ? 0 : (steerKeys !== 0 ? steerKeys : gp ? gp.steer : this.touch.steer);
+    const touchSteer = this.touch.steer || (this.tilt.enabled ? this.tilt.steer : 0);
+    const steer = blockInput ? 0 : (steerKeys !== 0 ? steerKeys : gp ? gp.steer : touchSteer);
     const pedaling = !blockInput && ((W.isDown || UP.isDown) || (gp && gp.pedal) || this.touch.pedal);
     const braking = !blockInput && ((S.isDown || DOWN.isDown) || (gp && gp.brake) || this.touch.brake);
 
@@ -755,11 +790,13 @@ export default class GameScene extends Phaser.Scene {
       }
     }
 
-    // camera: look where you're going, zoom out at speed
+    // camera: look where you're going, zoom out at speed; M13.3 — never
+    // zoom out past what fits the map on big canvases (cam.width = the
+    // window under Scale.RESIZE), so no voids show around the map
     const cam = this.cameras.main;
     const spdNow = this.vel.length();
     cam.setFollowOffset(-this.vel.x * CAMERA.lookahead, -this.vel.y * CAMERA.lookahead);
-    const targetZoom = 1 - CAMERA.zoomSpan * Phaser.Math.Clamp(spdNow / VEHICLE.maxSpeed, 0, 1);
+    const targetZoom = this.camFloor * (1 - CAMERA.zoomSpan * Phaser.Math.Clamp(spdNow / VEHICLE.maxSpeed, 0, 1));
     cam.setZoom(cam.zoom + (targetZoom - cam.zoom) * Math.min(1, CAMERA.zoomLerp * dt));
 
     // juice FX compute the hop arc; stash visual offsets (applied in

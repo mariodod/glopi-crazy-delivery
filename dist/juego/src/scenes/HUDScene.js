@@ -109,6 +109,35 @@ export default class HUDScene extends Phaser.Scene {
       });
       this.syncTouchUI();
     }
+
+    // M13.3: responsive anchors — under Scale.RESIZE the canvas IS the
+    // window: right/center HUD items track the edges and the touch zones
+    // hug them (steer pair bottom-left, brake/pedal pair bottom-right).
+    this.syncLayout = () => {
+      const w = this.scale.width;
+      const h = this.scale.height;
+      this.statsText.x = w - 12;
+      this.shiftText.x = w / 2;
+      this.muteText.x = w - 12;
+      this.fsText.x = w - 52;
+      if (this.touch) {
+        const byKey = {};
+        for (const z of this.touch.zones) byKey[z.key] = z;
+        const pedal = byKey.pedal;
+        const brake = byKey.brake;
+        pedal.x = w - 172;
+        brake.x = pedal.x - 120; // same 14px gap the design used
+        for (const z of this.touch.zones) z.y = h - 170;
+        this.touchBtns.forEach((btn, i) => {
+          const z = this.touch.zones[i];
+          btn.setPosition(z.x + z.w / 2, z.y + z.h / 2);
+        });
+        this.syncTouchUI();
+      }
+    };
+    this.syncLayout();
+    this.scale.on('resize', this.syncLayout);
+    this.events.once('shutdown', () => this.scale.off('resize', this.syncLayout));
   }
 
   /** Coarse-pointer devices (or the first real touch) bring the zones up. */
