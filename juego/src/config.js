@@ -59,16 +59,6 @@ export const IMPACT = {
 export const DEBUG_KEY = 'H';
 
 /**
- * M13.3 tilt steering on phones: lean the device instead of the ◀ ▶ hold.
- * Degrees of lean past the captured rest angle that engage/disengage a side
- * (enter > exit gives hysteresis so the steer doesn't flicker).
- */
-export const TILT = {
-  enter: 14,
-  exit: 7,
-};
-
-/**
  * Orders core loop (M3/M4). Zones are radius checks against Glopi's center.
  * Pickup AND delivery both happen automatically when Glopi comes fully to a
  * stop inside the zone — no button. All time units are seconds, fares in €.

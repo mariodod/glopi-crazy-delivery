@@ -3,7 +3,7 @@ import * as Phaser from 'phaser';
 import { COLORS, GAME_WIDTH, GAME_HEIGHT, PLAYER } from '../config.js';
 import { DIFFICULTIES, nextDiffKey, storedKey, storeKey } from '../data/difficulties.js';
 import { loadCareer, rankOf } from '../data/career.js';
-import { applySoundMute, isMuted, isTiltOn, setTiltOn, setMuted, toggleFullscreen, enterMobileFullscreen } from '../data/settings.js';
+import { applySoundMute, isMuted, setMuted, toggleFullscreen, enterMobileFullscreen } from '../data/settings.js';
 import { cycleLang, getLang, t } from '../i18n.js';
 
 /**
@@ -134,15 +134,6 @@ export default class MenuScene extends Phaser.Scene {
       })
       .setOrigin(1, 0);
 
-    // ---- M13.3 tilt steering row: tap or the T key toggles device lean ----
-    this.tiltText = this.add
-      .text(cx, 584, '', {
-        fontFamily: 'monospace',
-        fontSize: '16px',
-        color: '#66d9e8',
-      })
-      .setOrigin(0.5);
-
     const refreshMenuTexts = () => {
       const tier = DIFFICULTIES[this.diffKey];
       this.subtitle.setText(t('menu.subtitle'));
@@ -153,10 +144,6 @@ export default class MenuScene extends Phaser.Scene {
       this.diffDesc.setText(t(tier.descKey));
       this.langText.setText(t('menu.lang', { lang: getLang().toUpperCase() }));
       this.muteText.setText(isMuted() ? '🔇' : '🔊');
-      // M13.3 tilt row reflects the stored preference (cyan = engaged)
-      this.tiltText
-        .setText(t('menu.tilt', { mode: isTiltOn() ? t('ui.tiltTilt') : t('ui.tiltTouch') }))
-        .setColor(isTiltOn() ? '#66d9e8' : '#8d8daa');
       const career = loadCareer();
       this.rankText
         .setText(career && career.shifts > 0 ? t('menu.rank', { rank: t(rankOf(career.deliveries).key), d: career.deliveries }) : '');
@@ -172,10 +159,6 @@ export default class MenuScene extends Phaser.Scene {
     };
     const cycleLangUi = () => {
       cycleLang();
-      refreshMenuTexts();
-    };
-    const cycleTilt = () => {
-      setTiltOn(!isTiltOn());
       refreshMenuTexts();
     };
     refreshMenuTexts();
@@ -204,16 +187,9 @@ export default class MenuScene extends Phaser.Scene {
       event.stopPropagation();
       pointerCycle(() => toggleFullscreen(this.game));
     });
-    // M13.3: the tilt row shares the click-gate so a tap on it never starts
-    this.tiltText.setInteractive({ useHandCursor: true });
-    this.tiltText.on('pointerdown', (_pointer, _x, _y, event) => {
-      event.stopPropagation();
-      pointerCycle(cycleTilt);
-    });
     this.input.keyboard.on('keydown-LEFT', cycleDiff);
     this.input.keyboard.on('keydown-RIGHT', cycleDiff);
     this.input.keyboard.on('keydown-L', cycleLangUi);
-    this.input.keyboard.on('keydown-T', cycleTilt);
 
     const launch = () => {
       // M13.3: phones start fullscreen-locked to landscape — this call must
@@ -245,7 +221,6 @@ export default class MenuScene extends Phaser.Scene {
       this.prompt.x = cxw;
       this.diffText.x = cxw;
       this.diffDesc.x = cxw;
-      this.tiltText.x = cxw;
       this.langText.x = w - 12;
       this.langHint.x = w - 12;
       this.muteText.x = w - 12;
