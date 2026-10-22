@@ -7,7 +7,6 @@
  * is Phaser's GlobalSoundManager.mute (set at boot + on every toggle).
  */
 const MUTE_KEY = 'glopi-mute';
-const TILT_KEY = 'glopi-tilt';
 
 export function isMuted() {
   try {
@@ -46,30 +45,15 @@ export function toggleFullscreen(game) {
   }
 }
 
-// ---- M13.3 tilt steering preference ("glopi-tilt") ------------------------
+// ---- M8.3 touch/fullscreen world check ------------------------------------
 
-/** Coarse pointer = phones/tablets — the worlds the touch UI and tilt cover. */
+/** Coarse pointer = phones/tablets — the touch UI + fullscreen-lock world. */
 export function isTouchLike() {
   try {
     return !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
   } catch (_e) {
     return false;
   }
-}
-
-/** Stored tilt pref; unset defaults to ON on touch devices. */
-export function isTiltOn() {
-  try {
-    const v = localStorage.getItem(TILT_KEY);
-    if (v != null) return v === '1';
-  } catch (_e) { /* storage unavailable */ }
-  return isTouchLike();
-}
-
-export function setTiltOn(on) {
-  try {
-    localStorage.setItem(TILT_KEY, on ? '1' : '0');
-  } catch (_e) { /* storage unavailable */ }
 }
 
 
