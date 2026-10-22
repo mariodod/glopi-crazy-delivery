@@ -202,7 +202,9 @@ glopi-crazy-delivery/
 - [x] Promo reshots (`feat`, commit `94bb948`) — `promo/shot-menu.png` recaptured without the MANDO row (80 429 B); `promo/gameplay.gif` rebuilt by splice instead of a full re-capture: the 27 non-menu frames decoded untouched from the existing GIF, frames 0-1 replaced with fresh tilt-free menu grabs (raw 3-3-2 index arrays pulled as b64 from the dev tab), re-encoded 29 frames @ delay 9 (360 841 B), roundtrip-decode verified + frame dumps re-checked side by side
 - [x] Housekeeping — package.json `version` 1.3.1
 
-**Exit criteria**: live v1.3.1 deploy + drill (landing bullet `Rebufo`, no MANDO row anywhere, touch ride intact) — *(live drill below after deploy)*
+**Exit criteria**: live v1.3.1 deploy + drill (landing bullet `Rebufo`, no MANDO row anywhere, touch ride intact) — ✅ *(drill below)*
+
+- [x] Live drill — deploy `99ecaf7` on gh-pages (parented on `30847f6`, flat tree root). The bare URLs kept serving the v1.3.0 CDN edge for a few minutes after the push (Fastly TTL; query-string busts don't help since GH Pages normalizes queries away — `raw.githubusercontent.com/.../gh-pages/...` confirmed the new objects immediately). Once propagated, byte-exact: `prom⁠o/gameplay.gif` 360 841 B = the splice, `promo/shot-menu.png` 80 429 B = the reshot; landing serves the `Rebufo` bullet with zero `Rebuje` and the reverted cta-note (`teclado, mando o táctil`, no `inclinando`); live `juego/src/i18n.js` has `¡REBUFO!` and zero tilt keys. Live game: menu without the MANDO row, stamp `v1.3 · M13 · Phaser 3.90`, rush shift starts (15 cars, DraftSystem alive, W surge 0 → 51 px/s, clock at 59 s), no tilt props on the Game scene, forced shift end → results card → synthetic tap → fresh 60 s shift; console across the whole live session: one Phaser banner (info), zero errors / zero warnings
 
 ## 7. Risks & Anti-Goals
 
